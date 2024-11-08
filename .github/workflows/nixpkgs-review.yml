@@ -4,7 +4,7 @@ on:
   # TODO: workflow_dispatch:
 
 jobs:
-  tasks:
+  review:
     strategy:
       fail-fast: false
       matrix:

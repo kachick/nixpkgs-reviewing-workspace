@@ -1,20 +1,7 @@
 name: 👁️
 on:
-  workflow_dispatch:
-    inputs:
-      subcmd:
-        type: choice
-        required: true
-        description: 'sub command to be used in nixpkgs-review'
-        default: 'pr'
-        options:
-          - pr
-          - rev
-          - wip
-      args:
-        type: string
-        required: true
-        description: 'Args to be used in nixpkgs-review'
+  pull_request:
+  # TODO: workflow_dispatch:
 
 jobs:
   tasks:
@@ -26,29 +13,14 @@ jobs:
           # Add ARM based Linux runner if available in free plan
           # https://github.blog/news-insights/product-news/arm64-on-github-actions-powering-faster-more-efficient-build-systems/
           - macos-15 # aarch64
-          - macos-13 # x86_64
+    # - TODO: macos-13 # x86_64
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
         with:
           repository: 'NixOS/nixpkgs'
-          fetch-depth: 0 # Required all commits for merging operation
       - uses: DeterminateSystems/nix-installer-action@b92f66560d6f97d6576405a7bae901ab57e72b6a # v15
       - uses: DeterminateSystems/magic-nix-cache-action@87b14cf437d03d37989d87f0fa5ce4f5dc1a330b # v8
       - run: |
-          nix shell 'github:NixOS/nixpkgs/nixos-24.05#_7zz' --command \
-            nix run 'github:NixOS/nixpkgs/nixos-unstable#nixpkgs-review' -- ${{ inputs.subcmd }} \
-              --run '7zz a -tzip "${{ runner.temp }}/results-${{ github.sha }}-${{ matrix.runner }}" ./results' \
-              ${{ inputs.args }}
-      - name: Upload built files as an artifact
-        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
-        with:
-          if-no-files-found: 'error'
-          name: 'results.zip'
-          # Do not archive raw files with this action for splitting jobs for different triggers and displaying
-          # This intentionally mades nested zip as `plgins(.zip)/micro-kdl.zip`. Cannot flatten with the upload-artifact restriction
-          #
-          # You can extract the product as `tar -xf results-foobar.tar.gz`
-          path: |
-            ${{ runner.temp }}/results-${{ github.sha }}-${{ matrix.runner }}.zip
+          nix-shell --arg nixpkgs './.' --command 'nixpkgs-review pr "https://github.com/NixOS/nixpkgs/pull/354280" --print-result'

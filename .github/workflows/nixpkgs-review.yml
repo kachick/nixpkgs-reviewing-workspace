@@ -37,6 +37,6 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
         with:
-          name: 'nixpkgs-review-files-${{ github.sha }}-${{ matrix.runner }}'
+          name: 'nixpkgs-review-files-${{ github.sha }}-${{ runner.arch }}-${{ runner.os }}'
           path: '${{ steps.get-meta.outputs.cache_dir }}/nixpkgs-review/'
           if-no-files-found: 'error'

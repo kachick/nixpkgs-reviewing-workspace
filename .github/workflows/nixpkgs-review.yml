@@ -32,7 +32,7 @@ jobs:
       # TODO: Prefer nixpkgs version of nixpkgs-review since updated to https://github.com/Mic92/nixpkgs-review/commit/055465e55d131ffb1e1617f46d3bade0b87bbe69 or higher
       - run: | # shell
           #
-          nix run 'github:Mic92/nixpkgs-review' -- pr 'https://github.com/NixOS/nixpkgs/pull/354280' --print-result
+          nix run 'github:Mic92/nixpkgs-review' -- pr 'https://github.com/NixOS/nixpkgs/pull/353993' --print-result
 
       - name: Upload artifact
         uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3

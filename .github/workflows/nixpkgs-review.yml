@@ -15,7 +15,7 @@ jobs:
           - macos-15 # aarch64
     # - TODO: macos-13 # x86_64
     runs-on: ${{ matrix.runner }}
-    timeout-minutes: 30
+    timeout-minutes: 180
     steps:
       - name: Make sure dependent environments
         id: get-meta

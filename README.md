@@ -15,6 +15,18 @@ Solution
 
 - GitHub Actions are free for pricing in public repositories. 😋
 
+## Matrix
+
+As I understand that, Which github provided runner matches the Nix supported [systems](https://github.com/NixOS/nixpkgs/blob/nixos-24.05/lib/systems/flake-systems.nix).
+
+Excluding no extra runner as _large_. Which cannot be used in free plan.
+
+| Nix            | GitHub       |
+| -------------- | ------------ |
+| x86_64-linux   | ubuntu-24.04 |
+| x86_64-darwin  | macos-13     |
+| aarch64-darwin | macos-15     |
+
 ## Usage
 
 [Run workflow](https://github.com/kachick/nixpkgs-reviewing-workspace/actions/workflows/nixpkgs-review.yml)

@@ -23,9 +23,11 @@ jobs:
           #
           # https://github.com/Mic92/nixpkgs-review/blob/055465e55d131ffb1e1617f46d3bade0b87bbe69/nixpkgs_review/builddir.py#L24-L36
           echo "cache_dir=${XDG_CACHE_HOME:-${HOME}/.cache}" | tee -a "$GITHUB_OUTPUT"
+
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
         with:
           repository: 'NixOS/nixpkgs'
+
       - uses: DeterminateSystems/nix-installer-action@b92f66560d6f97d6576405a7bae901ab57e72b6a # v15
       # Don't add DeterminateSystems/magic-nix-cache-action in this workflow. Caching is not reasonable for this use
 

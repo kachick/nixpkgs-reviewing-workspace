@@ -1,7 +1,6 @@
 # nixpkgs-reviewing-workspace
 
 [![Dev Shell Status](https://github.com/kachick/nixpkgs-reviewing-workspace/actions/workflows/devshell.yml/badge.svg?branch=main)](https://github.com/kachick/nixpkgs-reviewing-workspace/actions/workflows/devshell.yml?query=branch%3Amain+)
-[![nixpkgs-review Status](https://github.com/kachick/nixpkgs-reviewing-workspace/actions/workflows/devshell.yml/nixpkgs-review.yml)](https://github.com/kachick/nixpkgs-reviewing-workspace/actions/workflows/nixpkgs-review.yml)
 
 ## Motivation
 
@@ -33,10 +32,3 @@ Excluding no extra runner as _large_. Which cannot be used in free plan.
 
 Build results will be uploaded in the artifact.\
 You can download it with `gh run download [<run-id>]`
-
-For example, if I need to test <https://github.com/NixOS/nixpkgs/pull/329482>, run with these params.
-
-```yaml
-subcmd: pr
-args: https://github.com/NixOS/nixpkgs/pull/329482
-```

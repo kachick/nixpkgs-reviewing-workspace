@@ -1,7 +1,12 @@
 name: 👁️
 on:
-  pull_request:
-  # TODO: workflow_dispatch:
+  # pull_request: # Enable only when developing
+  workflow_dispatch:
+    inputs:
+      pr-number:
+        description: 'Target PR number'
+        required: true
+        type: number
 
 jobs:
   review:
@@ -13,7 +18,7 @@ jobs:
           # Add ARM based Linux runner if available in free plan
           # https://github.blog/news-insights/product-news/arm64-on-github-actions-powering-faster-more-efficient-build-systems/
           - macos-15 # aarch64
-    # - TODO: macos-13 # x86_64
+          - macos-13 # x86_64
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 180
     steps:
@@ -34,11 +39,11 @@ jobs:
       # TODO: Prefer nixpkgs version of nixpkgs-review since updated to https://github.com/Mic92/nixpkgs-review/commit/055465e55d131ffb1e1617f46d3bade0b87bbe69 or higher
       - run: | # shell
           #
-          nix run 'github:Mic92/nixpkgs-review' -- pr 'https://github.com/NixOS/nixpkgs/pull/353993' --print-result
+          nix run 'github:Mic92/nixpkgs-review' -- pr '${{ inputs.pr-number }}' --print-result
 
       - name: Upload artifact
         uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
         with:
-          name: 'nixpkgs-review-files-${{ github.sha }}-${{ runner.arch }}-${{ runner.os }}'
+          name: 'nixpkgs-review-files-pr-${{ inputs.pr-number }}-${{ runner.arch }}-${{ runner.os }}'
           path: '${{ steps.get-meta.outputs.cache_dir }}/nixpkgs-review/'
           if-no-files-found: 'error'

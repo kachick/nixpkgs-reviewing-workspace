@@ -1,13 +1,9 @@
 {
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
-    # Don't use this in GitHub Actions
-    nixpkgs-review = {
-      url = "github:Mic92/nixpkgs-review";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+    # Prefer nixpkgs- rather than nixos- for darwin
+    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     selfup = {
-      url = "github:kachick/selfup/v1.1.7";
+      url = "github:kachick/selfup/v1.1.8";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
@@ -16,7 +12,6 @@
     {
       self,
       nixpkgs,
-      nixpkgs-review,
       selfup,
     }:
     let
@@ -44,14 +39,13 @@
                 dprint
                 typos
 
-                # nixpkgs-review # TODO: Enable since https://nixpk.gs/pr-tracker.html?pr=366587 is useable in unstable channel
+                nixpkgs-review
                 gh
                 git
                 tree
                 fd
               ])
               ++ [
-                nixpkgs-review.packages.${system}.default
                 selfup.packages.${system}.default
               ];
           };

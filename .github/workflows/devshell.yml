@@ -25,10 +25,10 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          # - ubuntu-24.04
+          - ubuntu-24.04
+          # - ubuntu-24.04-arm # aarch64-Linux
           # - macos-15 # aarch64
           # - macos-13 # x86_64
-          - ubuntu-24.04-arm # aarch64-Linux
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     steps:

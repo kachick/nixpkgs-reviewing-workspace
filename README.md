@@ -20,11 +20,12 @@ As I understand that, Which github provided runner matches the Nix supported [sy
 
 Excluding _large_ runners here. Which cannot be used in free plan.
 
-| Nix            | GitHub       |
-| -------------- | ------------ |
-| x86_64-linux   | ubuntu-24.04 |
-| x86_64-darwin  | macos-13     |
-| aarch64-darwin | macos-15     |
+| Nix            | GitHub           |
+| -------------- | ---------------- |
+| x86_64-linux   | ubuntu-24.04     |
+| aarch64-Linux  | ubuntu-24.04-arm |
+| x86_64-darwin  | macos-13         |
+| aarch64-darwin | macos-15         |
 
 ## Usage
 

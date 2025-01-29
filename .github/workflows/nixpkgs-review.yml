@@ -30,9 +30,19 @@ jobs:
           # https://github.com/Mic92/nixpkgs-review/blob/055465e55d131ffb1e1617f46d3bade0b87bbe69/nixpkgs_review/builddir.py#L24-L36
           echo "cache_dir=${XDG_CACHE_HOME:-${HOME}/.cache}" | tee -a "$GITHUB_OUTPUT"
 
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - name: Cache nixpkgs repository
+        id: cache-nixpkgs
+        uses: actions/cache@v4
         with:
-          repository: 'NixOS/nixpkgs'
+          path: '.'
+          key: 'nixpkgs-${{ github.run_id }}'
+          restore-keys: 'nixpkgs'
+
+      - name: Checkout nixpkgs
+        run: |
+          set +e
+          [[ -d '.git' ]] || git clone 'https://github.com/NixOS/nixpkgs.git' .
+           git pull origin master
 
       - name: Make sure the shallow clone or not
         # Often needed for debugging purpose. See GH-26 https://github.com/Mic92/nixpkgs-review/pull/426/files#diff-068fea7dedadb885b7dcccc0fe1bc843caa6f1da0c6622ee7a7d56e99c31475aR598-R606
@@ -53,7 +63,7 @@ jobs:
           GITHUB_TOKEN: '${{ github.token }}'
         run: | # shell
           #
-          nix run 'github:NixOS/nixpkgs/nixpkgs-unstable#nixpkgs-review' -- pr '${{ inputs.pr-number }}' --print-result
+          nix run '.#nixpkgs-review' -- pr '${{ inputs.pr-number }}' --print-result
 
       - name: Upload artifact
         uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4.6.0

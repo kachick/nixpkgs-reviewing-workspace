@@ -54,7 +54,7 @@ jobs:
           nix develop --command nixpkgs-review pr '${{ inputs.pr-number }}' --print-result
 
       - name: Upload artifact
-        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: 'nixpkgs-review-files-pr-${{ inputs.pr-number }}-${{ runner.arch }}-${{ runner.os }}'
           path: '${{ steps.get-meta.outputs.cache_dir }}/nixpkgs-review/'

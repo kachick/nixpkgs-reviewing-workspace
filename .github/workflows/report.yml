@@ -1,0 +1,27 @@
+name: ✍
+run-name: 'Report for ${{ inputs.run_id }}'
+on:
+  workflow_call:
+    inputs:
+      run_id:
+        description: 'Target Run'
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: 'Target Run'
+        required: true
+        type: string
+
+jobs:
+  report:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: DeterminateSystems/nix-installer-action@e50d5f73bfe71c2dd0aa4218de8f4afa59f8f81d # v16
+      - uses: actions/checkout@v4
+      - name: Generate report
+        env:
+          GH_TOKEN: '${{ github.token }}'
+        run: |
+          nix develop --command ./resume.bash '${{ inputs.run_id }}' >> "$GITHUB_STEP_SUMMARY"

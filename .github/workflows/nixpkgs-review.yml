@@ -1,9 +1,9 @@
 name: 👁️
 # https://stackoverflow.com/questions/71155641/github-actions-how-to-view-inputs-for-workflow-dispatch
-run-name: 'NixOS/nixpkgs#${{ inputs.pr-number }}'
-# run-name: '[Experimental]' # Enable only when developing
+# run-name: 'NixOS/nixpkgs#${{ env.pr-number }}'
+run-name: '[Experimental]' # Enable only when developing
 on:
-  # pull_request: # Enable only when developing
+  pull_request: # Enable only when developing
   workflow_dispatch:
     inputs:
       pr-number:
@@ -24,15 +24,15 @@ on:
         default: |
           [ "ubuntu-24.04", "ubuntu-24.04-arm", "macos-15", "macos-13" ]
 
-# env:
-#   pr-number: '42' # Enable only when developing
+env:
+  pr-number: '395562' # Enable only when developing
 
 jobs:
   review:
     strategy:
       fail-fast: false
       matrix:
-        runner: '${{ fromJson(inputs.runners) }}'
+        runner: ${{ fromJson('[ "ubuntu-24.04", "ubuntu-24.04-arm", "macos-15" ]') }}
     runs-on: ${{ matrix.runner }}
     # timeout-minutes: 180 # Any limitations might not fit for this repository. So temporary disabling
     steps:
@@ -64,12 +64,12 @@ jobs:
           GITHUB_TOKEN: '${{ github.token }}'
         run: | # shell
           #
-          nix run 'github:NixOS/nixpkgs/nixpkgs-unstable#nixpkgs-review' -- pr '${{ inputs.pr-number }}' --print-result
+          nix run 'github:NixOS/nixpkgs/nixpkgs-unstable#nixpkgs-review' -- pr '${{ env.pr-number }}' --print-result
 
       - name: Upload artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: 'nixpkgs-review-files-pr-${{ inputs.pr-number }}-${{ runner.arch }}-${{ runner.os }}'
+          name: 'nixpkgs-review-files-pr-${{ env.pr-number }}-${{ runner.arch }}-${{ runner.os }}'
           path: '${{ steps.get-meta.outputs.cache_dir }}/nixpkgs-review/'
           if-no-files-found: 'error'
 

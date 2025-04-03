@@ -1,14 +1,18 @@
 name: 👁️
 # https://stackoverflow.com/questions/71155641/github-actions-how-to-view-inputs-for-workflow-dispatch
-run-name: 'NixOS/nixpkgs#${{ inputs.pr-number }}'
+# run-name: 'NixOS/nixpkgs#${{ inputs.pr-number }}'
+run-name: '[Experimental] Enable binary cache for nixpkgs-review' # Enable only when developing
 on:
-  # pull_request: # Enable only when developing
+  pull_request: # Enable only when developing
   workflow_dispatch:
     inputs:
       pr-number:
         description: 'Target PR number'
         required: true
         type: number
+
+env:
+  pr-number: '395562' # Enable only when developing
 
 jobs:
   review:
@@ -51,12 +55,12 @@ jobs:
           GITHUB_TOKEN: '${{ github.token }}'
         run: | # shell
           #
-          nix run 'github:NixOS/nixpkgs/nixpkgs-unstable#nixpkgs-review' -- pr '${{ inputs.pr-number }}' --print-result
+          nix run 'github:NixOS/nixpkgs/nixpkgs-unstable#nixpkgs-review' -- pr '${{ env.pr-number }}' --print-result
 
       - name: Upload artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: 'nixpkgs-review-files-pr-${{ inputs.pr-number }}-${{ runner.arch }}-${{ runner.os }}'
+          name: 'nixpkgs-review-files-pr-${{ env.pr-number }}-${{ runner.arch }}-${{ runner.os }}'
           path: '${{ steps.get-meta.outputs.cache_dir }}/nixpkgs-review/'
           if-no-files-found: 'error'
 

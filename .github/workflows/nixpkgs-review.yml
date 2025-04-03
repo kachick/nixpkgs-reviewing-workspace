@@ -7,11 +7,11 @@ on:
   workflow_dispatch:
     inputs:
       pr-number:
-        description: 'Target PR number'
+        description: 'PR number'
         required: true
         type: number
       runners:
-        description: 'Target runners'
+        description: 'Runners'
         required: true
         # It does not alloow list and multiline string.
         #   - https://github.com/orgs/community/discussions/12882

@@ -14,8 +14,7 @@ on:
 
 env:
   pr-number: '395563'
-  cache-key: 'nixpkgs-${{ github.run_id }}'
-
+  cache-key: 'nixpkgs' # Don't add any suffix such as `github.run_id`, because of it is much large about 5+Gib, multiple caches immediately reached the limit of 10GiB in GHA.
 jobs:
   checkout:
     runs-on: ubuntu-24.04

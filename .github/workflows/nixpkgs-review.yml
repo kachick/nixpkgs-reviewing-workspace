@@ -18,11 +18,11 @@ on:
         #   - https://github.com/actions/toolkit/issues/184
         type: string
         # - ubuntu-24.04 # x86_64
-        # - ubuntu-24.04-arm # aarch64-Linux # It raising errors. See GH-43
+        # - ubuntu-24.04-arm # aarch64-Linux
         # - macos-15 # aarch64
         # - macos-13 # x86_64
         default: |
-          [ "ubuntu-24.04", "macos-15", "macos-13" ]
+          [ "ubuntu-24.04", "ubuntu-24.04-arm", "macos-15", "macos-13" ]
 
 # env:
 #   pr-number: '42' # Enable only when developing

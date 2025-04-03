@@ -1,9 +1,9 @@
 name: 👁️
 # https://stackoverflow.com/questions/71155641/github-actions-how-to-view-inputs-for-workflow-dispatch
-run-name: 'NixOS/nixpkgs#${{ inputs.pr-number }}'
-# run-name: '[Experimental]' # Enable only when developing
+# run-name: 'NixOS/nixpkgs#${{ inputs.pr-number }}'
+run-name: '[Experimental]' # Enable only when developing
 on:
-  # pull_request: # Enable only when developing
+  pull_request: # Enable only when developing
   workflow_dispatch:
     inputs:
       pr-number:
@@ -32,7 +32,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: '${{ fromJson(inputs.runners) }}'
+        runner: ${{ fromJson('[ "ubuntu-24.04", "macos-15", "macos-13" ]') }}
     runs-on: ${{ matrix.runner }}
     # timeout-minutes: 180 # Any limitations might not fit for this repository. So temporary disabling
     steps:

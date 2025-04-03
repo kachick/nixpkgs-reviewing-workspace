@@ -26,7 +26,7 @@ jobs:
         uses: actions/cache@v4
         # Unnecessary to use `enableCrossOsArchive` because the option is provided for adjsuting on Windows for now.
         with:
-          path: ./ # Don't use absolutepath such as `github.workspace` to share same caches in Linux and Darwin even if using enableCrossOsArchive.
+          path: ./ # Don't use absolute path such as `github.workspace` to share same caches in Linux and Darwin even if using enableCrossOsArchive.
           key: '${{ env.cache-key }}'
       - name: Are there restored files?
         id: check-files

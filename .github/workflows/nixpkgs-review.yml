@@ -22,8 +22,9 @@ jobs:
       - name: Cache nixpkgs repository
         id: cache-nixpkgs
         uses: actions/cache@v4
+        # Unnecessary to use `enableCrossOsArchive` because the option is provided for adjsuting on Windows for now.
         with:
-          path: '${{ github.workspace }}'
+          path: ./ # Don't use absolutepath such as `github.workspace` to share same caches in Linux and Darwin even if using enableCrossOsArchive.
           key: '${{ env.cache-key }}'
           restore-keys: 'nixpkgs-'
       - name: Are there restored files?
@@ -73,7 +74,7 @@ jobs:
         id: cache-nixpkgs
         uses: actions/cache/restore@v4
         with:
-          path: '${{ github.workspace }}'
+          path: ./
           key: '${{ env.cache-key }}'
           fail-on-cache-miss: true
 

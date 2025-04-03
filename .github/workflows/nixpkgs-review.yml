@@ -14,7 +14,9 @@ on:
 
 env:
   pr-number: '395563'
-  cache-key: 'nixpkgs' # Don't add any suffix such as `github.run_id`, because of it is much large about 5+Gib, multiple caches immediately reached the limit of 10GiB in GHA.
+  # Don't add any suffix such as `github.run_id` and don't use restore-keys, because of nixpkgs is much large about 5Gib+,
+  # so multiple caches immediately reached the limit of 10GiB in GHA.
+  cache-key: 'nixpkgs'
 jobs:
   checkout:
     runs-on: ubuntu-24.04
@@ -26,7 +28,6 @@ jobs:
         with:
           path: ./ # Don't use absolutepath such as `github.workspace` to share same caches in Linux and Darwin even if using enableCrossOsArchive.
           key: '${{ env.cache-key }}'
-          restore-keys: 'nixpkgs-14233504743' # Temporary for developing # gitleaks:allow
       - name: Are there restored files?
         id: check-files
         run: | # shell

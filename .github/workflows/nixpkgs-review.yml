@@ -10,8 +10,39 @@ on:
         required: true
         type: number
 
+env:
+  cache-key: 'nixpkgs-${{ github.run_id }}'
+
 jobs:
+  checkout:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Cache nixpkgs repository
+        id: cache-nixpkgs
+        uses: actions/cache@v4
+        with:
+          path: '${{ github.workspace }}'
+          key: '${{ env.cache-key }}'
+          restore-keys: 'nixpkgs-'
+      - name: Are there restored files?
+        id: check-files
+        run: | # shell
+          #
+          set +e
+          [ -d maintainers ] && echo -n 'got=true' | tee -a "$GITHUB_OUTPUT"
+      - name: Checkout nixpkgs while empty caches
+        if: steps.check-files.outputs.got != 'true'
+        uses: actions/checkout@v3
+        with:
+          repository: 'NixOS/nixpkgs'
+          ref: 'refs/pull/${{ inputs.pr-number }}/merge'
+          fetch-depth: 0 # Needed for the shallow clone
+      - name: Update the cache
+        run: | # shell
+          #
+          git pull origin master
   review:
+    needs: [checkout]
     strategy:
       fail-fast: false
       matrix:
@@ -32,17 +63,11 @@ jobs:
 
       - name: Cache nixpkgs repository
         id: cache-nixpkgs
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
-          path: '.'
-          key: 'nixpkgs-${{ github.run_id }}'
-          restore-keys: 'nixpkgs'
-
-      - name: Checkout nixpkgs
-        run: |
-          set +e
-          [[ -d '.git' ]] || git clone 'https://github.com/NixOS/nixpkgs.git' .
-           git pull origin master
+          path: '${{ github.workspace }}'
+          key: '${{ env.cache-key }}'
+          fail-on-cache-miss: true
 
       - name: Make sure the shallow clone or not
         # Often needed for debugging purpose. See GH-26 https://github.com/Mic92/nixpkgs-review/pull/426/files#diff-068fea7dedadb885b7dcccc0fe1bc843caa6f1da0c6622ee7a7d56e99c31475aR598-R606

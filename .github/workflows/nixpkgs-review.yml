@@ -1,19 +1,17 @@
 name: 👁️
 # https://stackoverflow.com/questions/71155641/github-actions-how-to-view-inputs-for-workflow-dispatch
-# run-name: 'NixOS/nixpkgs#${{ env.pr-number }}'
-run-name: 'experimental NixOS/nixpkgs#395563'
+run-name: 'NixOS/nixpkgs#${{ inputs.pr-number }}'
+# run-name: 'experimental NixOS/nixpkgs#pr-number' # Enable only when developing
 on:
-  pull_request:
   # pull_request: # Enable only when developing
-  # workflow_dispatch:
-  #   inputs:
-  #     pr-number:
-  #       description: 'Target PR number'
-  #       required: true
-  #       type: number
+  workflow_dispatch:
+    inputs:
+      pr-number:
+        description: 'Target PR number'
+        required: true
+        type: number
 
 env:
-  pr-number: '395563'
   # Don't add any suffix such as `github.run_id` and don't use restore-keys, because of nixpkgs is much large about 5Gib+,
   # so multiple caches immediately reached the limit of 10GiB in GHA.
   cache-key: 'nixpkgs'
@@ -45,7 +43,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           repository: 'NixOS/nixpkgs'
-          ref: 'refs/pull/${{ env.pr-number }}/merge'
+          ref: 'refs/pull/${{ inputs.pr-number }}/merge'
           fetch-depth: 0 # Needed for the shallow clone
       - name: Update the cache
         run: | # shell
@@ -96,12 +94,12 @@ jobs:
           GITHUB_TOKEN: '${{ github.token }}'
         run: | # shell
           #
-          nix develop --command nixpkgs-review pr '${{ env.pr-number }}' --print-result
+          nix develop --command nixpkgs-review pr '${{ inputs.pr-number }}' --print-result
 
       - name: Upload artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: 'nixpkgs-review-files-pr-${{ env.pr-number }}-${{ runner.arch }}-${{ runner.os }}'
+          name: 'nixpkgs-review-files-pr-${{ inputs.pr-number }}-${{ runner.arch }}-${{ runner.os }}'
           path: '${{ steps.get-meta.outputs.cache_dir }}/nixpkgs-review/'
           if-no-files-found: 'error'
 

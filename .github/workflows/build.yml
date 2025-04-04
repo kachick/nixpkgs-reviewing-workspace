@@ -1,0 +1,69 @@
+name: 🧪
+# https://stackoverflow.com/questions/71155641/github-actions-how-to-view-inputs-for-workflow-dispatch
+run-name: '${{ inputs.pname }}: ${{ inputs.repository }}#${{ inputs.ref }}'
+# run-name: '[Experimental]' # Enable only when developing
+on:
+  # pull_request: # Enable only when developing
+  workflow_dispatch:
+    inputs:
+      pname:
+        description: 'package name'
+        required: true
+        type: string
+      repository:
+        description: 'GitHub repository like "NixOS/nixpkgs"'
+        required: true
+        type: string
+      ref:
+        description: 'git ref'
+        required: true
+        type: string
+      runners:
+        description: 'Runners'
+        required: true
+        # It does not alloow list and multiline string.
+        #   - https://github.com/orgs/community/discussions/12882
+        #   - https://github.com/actions/toolkit/issues/184
+        type: string
+        # - ubuntu-24.04 # x86_64
+        # - ubuntu-24.04-arm # aarch64-Linux
+        # - macos-15 # aarch64
+        # - macos-13 # x86_64
+        default: |
+          [ "ubuntu-24.04", "ubuntu-24.04-arm", "macos-15", "macos-13" ]
+
+# env:
+#   pr-number: '42' # Enable only when developing
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: '${{ fromJson(inputs.runners) }}'
+    runs-on: ${{ matrix.runner }}
+    # timeout-minutes: 180 # Any limitations might not fit for this repository. So temporary disabling
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        with:
+          repository: '${{ inputs.repository }}'
+          ref: '${{ inputs.ref }}'
+
+      - uses: DeterminateSystems/nix-installer-action@e50d5f73bfe71c2dd0aa4218de8f4afa59f8f81d # v16
+
+      - name: Outputs nix version and the config
+        run: |
+          nix --version
+          nix config show
+
+      - name: Build
+        run: |
+          nix-build --attr 'pkgs.${{ inputs.pname }}'
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          # Should trim `-` for path available if using inputs.repository
+          name: 'build-${{ inputs.pname }}-${{ inputs.ref }}-${{ runner.arch }}-${{ runner.os }}'
+          path: './result/'
+          if-no-files-found: 'error'

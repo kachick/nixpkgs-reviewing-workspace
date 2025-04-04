@@ -1,17 +1,17 @@
 name: 🧪
 # https://stackoverflow.com/questions/71155641/github-actions-how-to-view-inputs-for-workflow-dispatch
-# run-name: '${{ inputs.pname }}: ${{ inputs.repository }}#${{ inputs.ref }}'
-run-name: '[Experimental] plemoljp-nf: kachick/nixpkgs#aa32ada9e1344d0a3abb64ffc806f8b07732fe4c' # Enable only when developing
+run-name: '${{ inputs.pname }}: ${{ inputs.repository }}#${{ inputs.ref }}'
+# run-name: '[Experimental] plemoljp-nf: kachick/nixpkgs#aa32ada9e1344d0a3abb64ffc806f8b07732fe4c' # Enable only when developing
 on:
-  pull_request: # Enable only when developing
+  # pull_request: # Enable only when developing
   workflow_dispatch:
     inputs:
       pname:
-        description: 'package name'
+        description: 'Package name'
         required: true
         type: string
       repository:
-        description: 'GitHub repository like "NixOS/nixpkgs"'
+        description: 'GitHub repository'
         default: 'NixOS/nixpkgs'
         required: true
         type: string
@@ -34,10 +34,10 @@ on:
         default: |
           [ "ubuntu-24.04", "ubuntu-24.04-arm", "macos-15", "macos-13" ]
 
-env: # Enable only when developing
-  pname: 'plemoljp-nf'
-  repository: 'kachick/nixpkgs'
-  ref: 'aa32ada9e1344d0a3abb64ffc806f8b07732fe4c'
+# env: # Enable only when developing
+#   pname: 'plemoljp-nf'
+#   repository: 'kachick/nixpkgs'
+#   ref: 'aa32ada9e1344d0a3abb64ffc806f8b07732fe4c'
 
 jobs:
   build:
@@ -50,7 +50,7 @@ jobs:
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
         with:
-          repository: '${{ env.repository }}'
+          repository: '${{ inputs.repository }}'
           ref: '${{ inputs.ref }}'
 
       - uses: DeterminateSystems/nix-installer-action@e50d5f73bfe71c2dd0aa4218de8f4afa59f8f81d # v16
@@ -62,12 +62,12 @@ jobs:
 
       - name: Build
         run: |
-          nix-build --attr 'pkgs.${{ env.pname }}'
+          nix-build --attr 'pkgs.${{ inputs.pname }}'
 
       - name: Upload artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           # Should trim `-` for path available if using inputs.repository
-          name: 'build-${{ env.pname }}-${{ env.ref }}-${{ runner.arch }}-${{ runner.os }}'
+          name: 'build-${{ inputs.pname }}-${{ inputs.ref }}-${{ runner.arch }}-${{ runner.os }}'
           path: './result/'
           if-no-files-found: 'error'

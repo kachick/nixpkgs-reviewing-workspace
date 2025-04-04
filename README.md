@@ -30,6 +30,8 @@ Excluding _large_ runners here. Which cannot be used in free plan.
 
 ## Usage
 
+### nixpkgs-review
+
 Specify the [NixOS/nixpkgs PR](https://github.com/NixOS/nixpkgs/pulls) number with following CLI,
 
 ```bash
@@ -45,6 +47,11 @@ If you want to get results and reports in another machine, run below
 ```bash
 task resume
 ```
+
+### nix-build / nix build
+
+Faster feedbacks much help us while early stage of adding or updating package.\
+You can use [another workflow](https://github.com/kachick/nixpkgs-reviewing-workspace/actions/workflows/build.yml) for that purpose even if not yet sending a PR.
 
 ## Traps
 

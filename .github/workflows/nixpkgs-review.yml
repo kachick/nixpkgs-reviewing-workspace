@@ -16,7 +16,7 @@ on:
       runners:
         description: 'Runners'
         required: true
-        # It does not alloow list and multiline string.
+        # It does not allow list and multiline string.
         #   - https://github.com/orgs/community/discussions/12882
         #   - https://github.com/actions/toolkit/issues/184
         type: string
@@ -24,8 +24,12 @@ on:
         # - ubuntu-24.04-arm # aarch64-Linux
         # - macos-15 # aarch64
         # - macos-13 # x86_64
+        #
+        # Default should be useful even when writing from smartphone
+        # - Avoid JSON array
+        # - Order should be faster and major platforms first
         default: |
-          [ "ubuntu-24.04", "ubuntu-24.04-arm", "macos-15", "macos-13" ]
+          ubuntu-24.04, macos-15, ubuntu-24.04-arm, macos-13
       args:
         # Use this option if your requirement is not simple. Might be needed for mass-rebuilds.
 

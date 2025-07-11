@@ -85,7 +85,7 @@ jobs:
         # Often needed for debugging purpose. See GH-26 https://github.com/Mic92/nixpkgs-review/pull/426/files#diff-068fea7dedadb885b7dcccc0fe1bc843caa6f1da0c6622ee7a7d56e99c31475aR598-R606
         run: git rev-parse --is-shallow-repository
 
-      - uses: cachix/install-nix-action@f0fe604f8a612776892427721526b4c7cfb23aba # v31.4.1 - Don't use DeterminateSystems/nix-installer-action that cannot specify the Nix version
+      - uses: cachix/install-nix-action@cebd211ec2008b83bda8fb0b21c3c072f004fe04 # v31.4.1 - Don't use DeterminateSystems/nix-installer-action that cannot specify the Nix version
         with:
           # Syntax example: https://github.com/DeterminateSystems/nix-installer-action/blob/c723f3a885e3f1d866d91f4f0c33dd44b1fc7c60/.github/workflows/ci.yml#L128-L129
           extra_nix_config: |

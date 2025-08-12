@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: cachix/install-nix-action@fc6e360bedc9ee72d75e701397f0bb30dce77568 # v31.5.2
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Generate report
         env:
           GH_TOKEN: '${{ github.token }}'

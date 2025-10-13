@@ -93,7 +93,7 @@ jobs:
         # Often needed for debugging purpose. See GH-26 https://github.com/Mic92/nixpkgs-review/pull/426/files#diff-068fea7dedadb885b7dcccc0fe1bc843caa6f1da0c6622ee7a7d56e99c31475aR598-R606
         run: git rev-parse --is-shallow-repository
 
-      - uses: cachix/install-nix-action@9280e7aca88deada44c930f1e2c78e21c3ae3edd # v31.7.0
+      - uses: cachix/install-nix-action@7ab6e7fd29da88e74b1e314a4ae9ac6b5cda3801 # v31.8.0
         with:
           extra_nix_config: |
             sandbox = ${{ github.event.inputs.sandbox }}

@@ -136,7 +136,7 @@ jobs:
           GITHUB_TOKEN: '${{ github.token }}'
         run: | # shell
           #
-          nix run 'github:NixOS/nixpkgs/nixpkgs-unstable#nixpkgs-reviewFull' -- pr '${{ inputs.pr-number }}' --print-result
+          nix run 'github:NixOS/nixpkgs/nixpkgs-unstable#nixpkgs-review' -- pr '${{ inputs.pr-number }}' --print-result
 
       - name: Run binary-cached nixpkgs-review for custom args
         if: ${{ inputs.args != '' }}
@@ -145,7 +145,7 @@ jobs:
           GITHUB_TOKEN: '${{ github.token }}'
         run: | # shell
           #
-          nix run 'github:NixOS/nixpkgs/nixpkgs-unstable#nixpkgs-reviewFull' -- ${{ inputs.args }}
+          nix run 'github:NixOS/nixpkgs/nixpkgs-unstable#nixpkgs-review' -- ${{ inputs.args }}
 
       - name: Logging disk space
         run: df -h

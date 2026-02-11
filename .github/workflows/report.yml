@@ -20,6 +20,12 @@ jobs:
     steps:
       - uses: cachix/install-nix-action@4e002c8ec80594ecd40e759629461e26c8abed15 # v31.9.0
       - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Restore and save Nix store
+        uses: nix-community/cache-nix-action@7df957e333c1e5da7721f60227dbba6d06080569 # v7
+        with:
+          primary-key: nix-${{ runner.os }}-${{ hashFiles('**/*.nix', '**/flake.lock') }}
       - name: Generate report
         env:
           GH_TOKEN: '${{ github.token }}'

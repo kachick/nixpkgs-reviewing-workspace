@@ -1,6 +1,7 @@
 # Rules for AI Agents
 
 ## Languages
+
 - **Go**: Use standard libraries as much as possible.
   - Formatter: Use `gofumpt`.
   - Testing: Use `github.com/google/go-cmp/cmp`.
@@ -8,11 +9,13 @@
 - **Nix**: Follow patterns in `flake.nix` and `pkgs/`.
 
 ## Git
+
 - **Verification**: Run `task check` before you commit. All tests and lints must pass.
 - **Commits**: Make small commits for each change. Do not use `commit --amend`.
 - **Messages**: Follow the style of recent commits. Use `Assisted-by: Gemini <gemini@google.com>` for big changes by AI.
 
 ## Coding Style
+
 - **Comments**: Write only important comments. Do not write obvious things.
 - **UI**: Keep good terminal output (e.g., connect `os.Stdin/Stdout` for `gh`).
 - **Tests**: Use real data instead of mocks when you can.

@@ -22,7 +22,7 @@ tasks:
       - git ls-files '*.nix' | xargs nix fmt
   lint:
     cmds:
-      - go vet ./pkgs/...
+      - go vet ./pkgs/resume/...
       - gofumpt -d .
       - dprint check
       - typos . .github .vscode

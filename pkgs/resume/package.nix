@@ -28,5 +28,6 @@ buildGoModule {
 
   meta = {
     description = "Resume to track a running job in console";
+    mainProgram = "resume";
   };
 }

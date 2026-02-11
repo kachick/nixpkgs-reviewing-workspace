@@ -8,6 +8,7 @@
 - **Nix**: Follow patterns in `flake.nix` and `pkgs/`.
 
 ## Git
+- **Verification**: Run `task check` before you commit. All tests and lints must pass.
 - **Commits**: Make small commits for each change. Do not use `commit --amend`.
 - **Messages**: Follow the style of recent commits. Use `Assisted-by: Gemini <gemini@google.com>` for big changes by AI.
 

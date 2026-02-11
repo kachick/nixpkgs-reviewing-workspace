@@ -49,6 +49,8 @@
                 fzf
 
                 (ruby_3_4.withPackages (ps: with ps; [ rubocop ]))
+                go
+                gopls
 
                 hydra-check
 

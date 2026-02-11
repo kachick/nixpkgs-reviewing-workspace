@@ -14,13 +14,16 @@ tasks:
       - task: lint
   test:
     cmds:
-      - echo 'Update here'
+      - go test ./pkgs/resume/...
   fmt:
     cmds:
+      - gofumpt -w .
       - dprint fmt
       - git ls-files '*.nix' | xargs nix fmt
   lint:
     cmds:
+      - go vet ./pkgs/...
+      - gofumpt -d .
       - dprint check
       - typos . .github .vscode
       # nix fmt doesn't have check: https://github.com/NixOS/nix/issues/6918

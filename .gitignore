@@ -1,3 +1,5 @@
 .direnv
+result
 
 nixpkgs-review-files*
+!pkgs/resume/snapshots/nixpkgs-review-files-*/report.md

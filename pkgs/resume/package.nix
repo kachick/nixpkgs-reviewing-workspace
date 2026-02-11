@@ -1,17 +1,31 @@
-{ pkgs, ... }:
-pkgs.writeShellApplication rec {
-  name = "resume";
-  text = builtins.readFile ./${name}.bash;
-  runtimeInputs = with pkgs; [
-    coreutils # mktemp
-    tree
-    fd
-    gh
-    ruby_3_4
+{
+  buildGoModule,
+  makeWrapper,
+  lib,
+  gh,
+  coreutils,
+}:
+buildGoModule {
+  pname = "resume";
+  version = "0.1.0";
+  src = ./.;
+
+  vendorHash = "sha256-uPqabZgQGQulf+F3BvMLhv4O0h5jOq12F7K60u5xjtA=";
+
+  nativeBuildInputs = [
+    makeWrapper
   ];
-  runtimeEnv = {
-    HELPER_PATH = "${./.}";
-  };
+
+  postInstall = ''
+    wrapProgram "$out/bin/resume" \
+      --prefix PATH : ${
+        lib.makeBinPath [
+          gh
+          coreutils
+        ]
+      }
+  '';
+
   meta = {
     description = "Resume to track a running job in console";
   };

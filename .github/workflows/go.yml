@@ -30,7 +30,7 @@ jobs:
           cache: true
 
       - name: Install gofumpt
-        run: go install mvdan.cc/gofumpt@latest
+        run: 'go install mvdan.cc/gofumpt@v0.9.2' # selfup {"extract":"v\\d\\.\\d+\\.\\d+","replacer":["gofumpt", "--version"], "nth": 1}
 
       - name: Format check
         run: |

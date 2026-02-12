@@ -46,10 +46,13 @@ func main() {
 	}
 	runID := args[0]
 
-	isCI := os.Getenv("CI") == "true"
+	// Check the value for clarity and robustness.
+	// Some other tools check only for existence, so don't define it in .envrc even as "false".
+	// For example, Gemini CLI UI degraded when CI=false was set.
+	inRunner := os.Getenv("GITHUB_ACTIONS") == "true"
 	currentAssetName := getCurrentAssetName()
 
-	if !isCI {
+	if !inRunner {
 		cmd := exec.Command("gh", "run", "watch", runID, "--interval", "10")
 		cmd.Stdin = os.Stdin
 		cmd.Stdout = os.Stdout

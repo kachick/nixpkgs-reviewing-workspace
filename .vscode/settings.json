@@ -8,5 +8,8 @@
   "nix.serverPath": "nixd",
   "[go]": {
     "editor.defaultFormatter": "golang.go"
+  },
+  "ocaml.sandbox": {
+    "kind": "global"
   }
 }

@@ -3,3 +3,14 @@ result
 
 nixpkgs-review-files*
 !pkgs/resume/snapshots/nixpkgs-review-files-*/report.md
+
+# OCaml
+_build/
+*.opam
+
+# Rust
+target/
+
+# Gleam
+build/
+*.beam

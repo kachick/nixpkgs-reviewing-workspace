@@ -4,6 +4,7 @@ import gleam/int
 import gleam/io
 import gleam/list
 import gleam/option.{type Option, None, Some}
+import gleam/order.{type Order}
 import gleam/result
 import gleam/string
 import shellout
@@ -19,6 +20,25 @@ const systems = [
   #("X64-macOS", NixSystem("x86_64-darwin", 2)),
   #("ARM64-macOS", NixSystem("aarch64-darwin", 3)),
 ]
+
+type Priority {
+  Known(tier: Int, favor: Int)
+  Undefined
+}
+
+fn compare_priority(a: Priority, b: Priority) -> Order {
+  case a, b {
+    Known(t1, f1), Known(t2, f2) -> {
+      case int.compare(t1, t2) {
+        order.Eq -> int.compare(f1, f2)
+        other -> other
+      }
+    }
+    Known(_, _), Undefined -> order.Lt
+    Undefined, Known(_, _) -> order.Gt
+    Undefined, Undefined -> order.Eq
+  }
+}
 
 fn get_current_asset_name(work_dir: String) -> String {
   let arch = case shellout.command("uname", ["-m"], work_dir, []) {
@@ -94,7 +114,6 @@ fn list_all_files(dir: String) -> List(String) {
 
 fn run(run_id: String) {
   let in_runner = os.get_env("GITHUB_ACTIONS") == Ok("true")
-  // The original working directory where the user invoked the command
   let work_dir = os.get_env("GLEAM_WAKE_PATH") |> result.unwrap(".")
   let current_asset = get_current_asset_name(work_dir)
 
@@ -148,14 +167,7 @@ fn run(run_id: String) {
   let reports =
     files
     |> list.filter(fn(p) { string.ends_with(p, "report.md") })
-    |> list.sort(fn(a, b) {
-      let #(t1, f1) = get_priority(a)
-      let #(t2, f2) = get_priority(b)
-      case t1 == t2 {
-        True -> int.compare(f1, f2)
-        False -> int.compare(t1, t2)
-      }
-    })
+    |> list.sort(fn(a, b) { compare_priority(get_priority(a), get_priority(b)) })
 
   case reports {
     [] -> io.println("No report.md found")
@@ -166,9 +178,9 @@ fn run(run_id: String) {
   }
 }
 
-fn get_priority(path: String) -> #(Int, Int) {
+fn get_priority(path: String) -> Priority {
   case extract_asset_name(path) {
-    None -> #(999, 999)
+    None -> Undefined
     Some(name) -> {
       let tier =
         list.key_find(systems, name)
@@ -178,7 +190,7 @@ fn get_priority(path: String) -> #(Int, Int) {
         True -> 0
         False -> 1
       }
-      #(tier, favor)
+      Known(tier, favor)
     }
   }
 }

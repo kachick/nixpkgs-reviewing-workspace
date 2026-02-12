@@ -15,6 +15,12 @@ struct Cli {
 static NIX_SYSTEMS: OnceLock<HashMap<&'static str, i32>> = OnceLock::new();
 static ASSET_REGEX: OnceLock<Regex> = OnceLock::new();
 
+#[derive(PartialEq, Eq, PartialOrd, Ord)]
+enum Priority {
+    Known(i32, i32),
+    Undefined,
+}
+
 fn get_nix_systems() -> &'static HashMap<&'static str, i32> {
     NIX_SYSTEMS.get_or_init(|| {
         [
@@ -63,14 +69,14 @@ fn extract_asset_name(path: &Path) -> Option<String> {
     None
 }
 
-fn get_priority(path: &Path) -> (i32, i32) {
+fn get_priority(path: &Path) -> Priority {
     match extract_asset_name(path) {
-        None => (999, 999),
+        None => Priority::Undefined,
         Some(name) => {
             let systems = get_nix_systems();
             let tier = *systems.get(name.as_str()).unwrap_or(&999);
             let favor = if name.ends_with("Linux") { 0 } else { 1 };
-            (tier, favor)
+            Priority::Known(tier, favor)
         }
     }
 }

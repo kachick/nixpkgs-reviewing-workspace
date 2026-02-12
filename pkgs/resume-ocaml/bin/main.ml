@@ -15,6 +15,21 @@ module NixSystem = struct
   ;;
 end
 
+type priority =
+  | Known of int * int
+  | Undefined
+
+let compare_priority a b =
+  match a, b with
+  | Known (t1, f1), Known (t2, f2) ->
+    (match Int.compare t1 t2 with
+     | 0 -> Int.compare f1 f2
+     | n -> n)
+  | Known _, Undefined -> -1
+  | Undefined, Known _ -> 1
+  | Undefined, Undefined -> 0
+;;
+
 let contains haystack needle =
   try
     ignore (Str.search_forward (Str.regexp_string needle) haystack 0);
@@ -37,15 +52,15 @@ let extract_asset_name path =
 
 let get_priority path =
   match extract_asset_name path with
-  | None -> 999, 999
+  | None -> Undefined
   | Some name ->
     let tier =
       match List.assoc_opt name NixSystem.systems with
       | Some s -> s.tier
-      | None -> 999
+      | None -> 999 (* This case is actually impossible due to find_map logic *)
     in
     let my_favor = if String.ends_with ~suffix:"Linux" name then 0 else 1 in
-    tier, my_favor
+    Known (tier, my_favor)
 ;;
 
 let read_file path =
@@ -138,7 +153,7 @@ let () =
     let reports =
       all_files
       |> List.filter (fun p -> Filename.basename p = "report.md")
-      |> List.sort (fun a b -> compare (get_priority a) (get_priority b))
+      |> List.sort (fun a b -> compare_priority (get_priority a) (get_priority b))
     in
     (match reports with
      | [] ->

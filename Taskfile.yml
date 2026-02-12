@@ -15,15 +15,24 @@ tasks:
   test:
     cmds:
       - go test ./pkgs/resume/...
+      - cd pkgs/resume-ocaml && dune runtest
+  dev-ocaml:
+    desc: Watch OCaml changes and update LSP metadata
+    cmds:
+      - cd pkgs/resume-ocaml && dune build -w
   fmt:
     cmds:
       - gofumpt -w .
+      - cd pkgs/resume-ocaml && dune build @fmt --promote || true
+      - cd pkgs/resume-gleam && gleam format
       - dprint fmt
       - git ls-files '*.nix' | xargs nix fmt
   lint:
     cmds:
       - go vet ./pkgs/resume/...
       - gofumpt -d .
+      - cd pkgs/resume-ocaml && dune build @fmt
+      - cd pkgs/resume-gleam && gleam format --check
       - dprint check
       - typos . .github .vscode
       # nix fmt doesn't have check: https://github.com/NixOS/nix/issues/6918

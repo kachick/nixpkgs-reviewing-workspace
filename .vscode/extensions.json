@@ -5,6 +5,7 @@
     "tekumara.typos-vscode",
     "dprint.dprint",
     "jnoortheen.nix-ide",
-    "golang.go"
+    "golang.go",
+    "ocamllabs.ocaml-platform"
   ]
 }

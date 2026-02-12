@@ -1,0 +1,6 @@
+(lang dune 3.11)
+(name resume-ocaml)
+(generate_opam_files true)
+(package
+ (name resume-ocaml)
+ (synopsis "Resume to track a running job in console (OCaml version)"))

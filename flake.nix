@@ -6,6 +6,7 @@
 
   outputs =
     {
+      self,
       nixpkgs,
       ...
     }:
@@ -21,7 +22,13 @@
           pkgs = nixpkgs.legacyPackages.${system};
         in
         {
-          default = pkgs.mkShellNoCC {
+          default = pkgs.mkShell {
+            inputsFrom = [
+              self.packages.${system}.resume
+              self.packages.${system}.resume-ocaml
+              self.packages.${system}.resume-rust
+            ];
+
             env = {
               # Correct pkgs versions in the nixd inlay hints
               NIX_PATH = "nixpkgs=${pkgs.path}";
@@ -52,6 +59,23 @@
                 gopls
                 gofumpt
 
+                ocaml
+                ocamlPackages.dune_3
+                ocamlPackages.ocaml-lsp
+                ocamlformat
+                ocamlPackages.utop
+                binutils
+
+                rustc
+                cargo
+                rust-analyzer
+                rustfmt
+                clippy
+
+                gleam
+                erlang
+                rebar3
+
                 hydra-check
 
                 zizmor
@@ -81,6 +105,18 @@
           resume = {
             type = "app";
             program = pkgs.lib.getExe packages.${system}.resume;
+          };
+          resume-ocaml = {
+            type = "app";
+            program = pkgs.lib.getExe packages.${system}.resume-ocaml;
+          };
+          resume-rust = {
+            type = "app";
+            program = pkgs.lib.getExe packages.${system}.resume-rust;
+          };
+          resume-gleam = {
+            type = "app";
+            program = pkgs.lib.getExe packages.${system}.resume-gleam;
           };
           fzf-resume = {
             type = "app";

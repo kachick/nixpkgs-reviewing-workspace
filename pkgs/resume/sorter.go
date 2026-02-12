@@ -1,6 +1,7 @@
 package main
 
 import (
+	"math"
 	"regexp"
 	"sort"
 	"strings"
@@ -47,7 +48,7 @@ func getPriority(path string) (int, int) {
 	assetName := extractAssetName(path)
 	nix, ok := NixByAssetName[assetName]
 	if !ok {
-		return 999, 999 // Unknown
+		return math.MaxInt, math.MaxInt // Unknown
 	}
 
 	tier := nix.Tier

@@ -1,0 +1,9 @@
+name = "resume_gleam"
+version = "0.1.0"
+
+[dependencies]
+gleam_stdlib = "~> 0.34.0"
+gleam_erlang = "~> 0.25.0"
+simplifile = "~> 2.2.0"
+shellout = "~> 1.6.0"
+argv = "~> 1.0.0"

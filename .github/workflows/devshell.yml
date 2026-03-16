@@ -35,9 +35,9 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: cachix/install-nix-action@19effe9fe722874e6d46dd7182e4b8b7a43c4a99 # v31.10.0
+      - uses: NixOS/nix-installer-action@main # There are no tagged releases
         with:
-          extra_nix_config: |
+          extra-conf: |
             sandbox = true
             accept-flake-config = true
       - name: Restore and save Nix store

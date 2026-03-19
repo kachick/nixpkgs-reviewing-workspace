@@ -6,12 +6,14 @@ on:
       - '.github/workflows/devshell.yml'
       - '**.nix'
       - 'flake.*'
+      - '.envrc'
       - 'Taskfile.yml'
   pull_request:
     paths:
       - '.github/workflows/devshell.yml'
       - '**.nix'
       - 'flake.*'
+      - '.envrc'
       - 'Taskfile.yml'
   schedule:
     # Every 10:42 JST
@@ -48,8 +50,14 @@ jobs:
         run: |
           set -x
           [[ "$(nix config show sandbox)" == 'true' ]]
-      - run: nix develop --command echo 'This step should be done before any other "nix develop" steps because of measuring Nix build time'
       - run: nix flake check
       - run: nix flake show
-      - run: nix develop --command task check
-    # - run: nix run . -- --version
+      - name: Install direnv
+        run: |
+          curl -sfL https://direnv.net/install.sh | bash
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+      - name: Load environment variables
+        run: |
+          direnv allow .
+          direnv export gha > "$GITHUB_ENV"
+      - run: task check

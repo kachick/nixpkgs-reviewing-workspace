@@ -42,10 +42,6 @@ jobs:
           extra-conf: |
             sandbox = true
             accept-flake-config = true
-      - name: Restore and save Nix store
-        uses: nix-community/cache-nix-action@7df957e333c1e5da7721f60227dbba6d06080569 # v7
-        with:
-          primary-key: nix-${{ runner.os }}-${{ hashFiles('**/*.nix', '**/flake.lock') }}
       - name: Ensure sandbox mode
         run: |
           set -x

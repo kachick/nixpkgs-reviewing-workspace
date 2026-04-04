@@ -50,8 +50,8 @@ jobs:
       - run: nix flake show
       - name: Install direnv
         run: |
-          rev="$(nix eval --raw --impure --expr '(builtins.fromJSON (builtins.readFile ./flake.lock)).nodes.nixpkgs.locked.rev')"
-          nix profile add "github:NixOS/nixpkgs/${rev}#direnv"
+          url="$(nix eval --raw --impure --expr '(builtins.fromJSON (builtins.readFile ./flake.lock)).nodes.nixpkgs.locked.url')"
+          nix profile add "${url}#direnv"
       - name: Load environment variables
         run: |
           direnv allow .

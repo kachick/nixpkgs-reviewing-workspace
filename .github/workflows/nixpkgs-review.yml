@@ -129,6 +129,11 @@ jobs:
           sudo rm -rf '/usr/local/lib/android'
           df -h
 
+      - name: Install dependencies
+        run: |
+          url="$(nix eval --raw --impure --expr '(builtins.fromJSON (builtins.readFile ./flake.lock)).nodes.nixpkgs.locked.url')"
+          nix profile add "${url}#nixpkgs-review" "${url}#nix-eval-jobs"
+
       - name: Run binary-cached nixpkgs-review for PR
         if: ${{ inputs.pr-number != '' }}
         env:
@@ -136,7 +141,7 @@ jobs:
           GITHUB_TOKEN: '${{ github.token }}'
         run: | # shell
           #
-          nix run 'https://channels.nixos.org/nixpkgs-unstable/nixexprs.tar.xz#nixpkgs-review' -- pr '${{ inputs.pr-number }}' --print-result
+          nixpkgs-review pr '${{ inputs.pr-number }}' --print-result
 
       - name: Run binary-cached nixpkgs-review for custom args
         if: ${{ inputs.args != '' }}
@@ -145,7 +150,7 @@ jobs:
           GITHUB_TOKEN: '${{ github.token }}'
         run: | # shell
           #
-          nix run 'https://channels.nixos.org/nixpkgs-unstable/nixexprs.tar.xz#nixpkgs-review' -- ${{ inputs.args }}
+          nixpkgs-review ${{ inputs.args }}
 
       - name: Logging disk space
         run: df -h

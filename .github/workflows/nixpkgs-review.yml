@@ -85,6 +85,17 @@ jobs:
 
           echo "✅ Input \"$input\" is a valid positive integer."
 
+      - name: Checkout this repository
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+        with:
+          path: '.repo-to-get-flake-lock'
+
+      - name: Move this repository to a temporary directory to avoid overlap with nixpkgs
+        run: |
+          target_path="${{ runner.temp }}/${{ github.repository }}"
+          mkdir -p "$(dirname "$target_path")"
+          mv .repo-to-get-flake-lock "$target_path"
+
       - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
         with:
           repository: 'NixOS/nixpkgs'
@@ -131,7 +142,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          url="$(nix eval --raw --impure --expr '(builtins.fromJSON (builtins.readFile ./flake.lock)).nodes.nixpkgs.locked.url')"
+          url="$(nix eval --raw --impure --expr "(builtins.fromJSON (builtins.readFile \"${{ runner.temp }}/${{ github.repository }}/flake.lock\")).nodes.nixpkgs.locked.url")"
           nix profile add "${url}#nixpkgs-review" "${url}#nix-eval-jobs"
 
       - name: Run binary-cached nixpkgs-review for PR

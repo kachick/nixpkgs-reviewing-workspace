@@ -19,12 +19,12 @@ Solution
 The GitHub hosted runners for Nix supported [systems](https://github.com/NixOS/nixpkgs/blob/nixos-25.05/lib/systems/flake-systems.nix) are in the list below.\
 Large runners are excluded because they are not available on the free plan.
 
-| Nix            | GitHub                                                                                                       |
-| -------------- | ------------------------------------------------------------------------------------------------------------ |
-| x86_64-linux   | [ubuntu-26.04](https://github.com/actions/runner-images/issues/9848)                                         |
-| aarch64-linux  | [ubuntu-26.04-arm](https://github.com/actions/partner-runner-images/blob/main/images/arm-ubuntu-24-image.md) |
-| x86_64-darwin  | [macos-26-intel](https://github.com/actions/runner-images/pull/13740)                                        |
-| aarch64-darwin | [macos-26](https://github.com/actions/runner-images/issues/13008)                                            |
+| Nix            | GitHub                                                                                                          |
+| -------------- | --------------------------------------------------------------------------------------------------------------- |
+| x86_64-linux   | [ubuntu-26.04](https://github.com/actions/runner-images/issues/13964)                                           |
+| aarch64-linux  | [ubuntu-26.04-arm](https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2604-Arm64-Readme.md) |
+| x86_64-darwin  | [macos-26-intel](https://github.com/actions/runner-images/pull/13740)                                           |
+| aarch64-darwin | [macos-26](https://github.com/actions/runner-images/issues/13008)                                               |
 
 ## Usage
 

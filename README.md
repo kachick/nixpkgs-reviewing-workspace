@@ -21,8 +21,8 @@ Large runners are excluded because they are not available on the free plan.
 
 | Nix            | GitHub                                                                                                       |
 | -------------- | ------------------------------------------------------------------------------------------------------------ |
-| x86_64-linux   | [ubuntu-24.04](https://github.com/actions/runner-images/issues/9848)                                         |
-| aarch64-linux  | [ubuntu-24.04-arm](https://github.com/actions/partner-runner-images/blob/main/images/arm-ubuntu-24-image.md) |
+| x86_64-linux   | [ubuntu-26.04](https://github.com/actions/runner-images/issues/9848)                                         |
+| aarch64-linux  | [ubuntu-26.04-arm](https://github.com/actions/partner-runner-images/blob/main/images/arm-ubuntu-24-image.md) |
 | x86_64-darwin  | [macos-26-intel](https://github.com/actions/runner-images/pull/13740)                                        |
 | aarch64-darwin | [macos-26](https://github.com/actions/runner-images/issues/13008)                                            |
 

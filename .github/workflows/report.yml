@@ -23,7 +23,7 @@ jobs:
           extra-conf: |
             sandbox = true
             accept-flake-config = true
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - name: Generate report

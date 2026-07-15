@@ -103,7 +103,7 @@ jobs:
         # Often needed for debugging purpose. See GH-26 https://github.com/Mic92/nixpkgs-review/pull/426/files#diff-068fea7dedadb885b7dcccc0fe1bc843caa6f1da0c6622ee7a7d56e99c31475aR598-R606
         run: git rev-parse --is-shallow-repository
 
-      - uses: NixOS/nix-installer-action@main # There are no tagged releases
+      - uses: NixOS/nix-installer-action@62c1943b776c509394b550f3f983adc14e9212d6 # v1.0.0
         with:
           extra-conf: |
             sandbox = ${{ github.event.inputs.sandbox }}

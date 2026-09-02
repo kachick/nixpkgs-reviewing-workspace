@@ -69,7 +69,9 @@ jobs:
 
       - name: Validate options
         if: ${{ inputs.args != '' && inputs.pr-number != '' }}
-        run: 'exit 2'
+        run: |
+          echo '❌ Error: Specify either "PR number" or "Customized arguments", not both.'
+          exit 2
 
       - name: Validate PR number
         if: ${{ inputs.pr-number != '' }}

@@ -67,12 +67,8 @@ jobs:
           # https://github.com/Mic92/nixpkgs-review/blob/055465e55d131ffb1e1617f46d3bade0b87bbe69/nixpkgs_review/builddir.py#L24-L36
           echo "cache_dir=${XDG_CACHE_HOME:-${HOME}/.cache}" | tee -a "$GITHUB_OUTPUT"
 
-      - name: Validate options
-        if: ${{ inputs.args != '' && inputs.pr-number != '' }}
-        run: 'exit 2'
-
       - name: Validate PR number
-        if: ${{ inputs.pr-number != '' }}
+        if: ${{ inputs.pr-number != '' && inputs.args == '' }}
         run: |
           input="${{ github.event.inputs.pr-number }}"
 
@@ -145,7 +141,7 @@ jobs:
           nix profile add "${url}#nixpkgs-review" "${url}#nix-eval-jobs"
 
       - name: Run binary-cached nixpkgs-review for PR
-        if: ${{ inputs.pr-number != '' }}
+        if: ${{ inputs.pr-number != '' && inputs.args == '' }}
         env:
           # https://github.com/Mic92/nixpkgs-review/blob/055465e55d131ffb1e1617f46d3bade0b87bbe69/README.md?plain=1#L239-L260
           GITHUB_TOKEN: '${{ github.token }}'

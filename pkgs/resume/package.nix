@@ -1,11 +1,11 @@
 {
-  buildGoModule,
+  buildGo127Module,
   makeWrapper,
   lib,
   gh,
   coreutils,
 }:
-buildGoModule {
+buildGo127Module {
   pname = "resume";
   version = "0.1.0";
   src = ./.;

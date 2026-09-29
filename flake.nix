@@ -7,6 +7,7 @@
   outputs =
     {
       nixpkgs,
+      self,
       ...
     }:
     let
@@ -26,6 +27,10 @@
               # Correct pkgs versions in the nixd inlay hints
               NIX_PATH = "nixpkgs=${pkgs.path}";
             };
+
+            inputsFrom = [
+              self.packages.${system}.resume
+            ];
 
             buildInputs = (
               with pkgs;

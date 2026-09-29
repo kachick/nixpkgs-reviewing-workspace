@@ -15,7 +15,16 @@
       forAllSystems = lib.genAttrs lib.systems.flakeExposed;
     in
     rec {
-      formatter = forAllSystems (system: nixpkgs.legacyPackages.${system}.nixfmt-tree);
+      formatter = forAllSystems (
+        system:
+        let
+          pkgs = nixpkgs.legacyPackages.${system};
+        in
+        pkgs.writeShellScriptBin "dprint-fmt" ''
+          exec "${lib.getExe pkgs.dprint}" fmt "$@"
+        ''
+      );
+
       devShells = forAllSystems (
         system:
         let
@@ -37,13 +46,11 @@
               [
                 bashInteractive
                 coreutils # mktemp
-                nixfmt
                 nixd
                 go-task
 
                 dprint
                 typos
-                shfmt
 
                 nixpkgs-reviewFull
                 bubblewrap # Require to run nixpkgs-review with sandbox mode. See https://github.com/Mic92/nixpkgs-review/pull/441
@@ -55,7 +62,6 @@
 
                 go
                 gopls
-                gofumpt
 
                 hydra-check
 

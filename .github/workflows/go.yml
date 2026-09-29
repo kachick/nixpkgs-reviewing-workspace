@@ -29,17 +29,6 @@ jobs:
           go-version-file: 'go.work'
           cache: true
 
-      - name: Install gofumpt
-        run: 'go install mvdan.cc/gofumpt@v0.12.0' # selfup {"extract":"v\\d\\.\\d+\\.\\d+","replacer":["gofumpt", "--version"], "nth": 1}
-
-      - name: Format check
-        run: |
-          if [ "$(gofumpt -l . | wc -l)" -gt 0 ]; then
-            echo "The following files are not formatted with gofumpt:"
-            gofumpt -l .
-            exit 1
-          fi
-
       - name: Vet
         run: go vet ./pkgs/resume/...
 

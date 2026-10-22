@@ -42,6 +42,13 @@ on:
         type: boolean
         default: false
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 # env: # Enable only when developing
 #   pname: 'plemoljp-nf'
 #   repository: 'kachick/nixpkgs'
@@ -49,6 +56,7 @@ on:
 
 jobs:
   build:
+    name: build
     strategy:
       fail-fast: false
       matrix:
@@ -61,6 +69,7 @@ jobs:
         with:
           repository: '${{ inputs.repository }}'
           ref: '${{ inputs.ref }}'
+          persist-credentials: false
 
       - uses: NixOS/nix-installer-action@62c1943b776c509394b550f3f983adc14e9212d6 # v1.0.0
         with:
@@ -73,16 +82,21 @@ jobs:
           nix config show
 
       - name: Ensure sandbox mode
+        env:
+          EXPECTED_SANDBOX: ${{ inputs.sandbox }}
         run: |
           set -x
-          [[ "$(nix config show sandbox)" == '${{ github.event.inputs.sandbox }}' ]]
+          [[ "$(nix config show sandbox)" == "$EXPECTED_SANDBOX" ]]
 
       - name: Build
+        env:
+          FORCE_REBUILD: ${{ inputs.force-rebuild }}
+          PACKAGE_NAME: ${{ matrix.pname }}
         run: |
-          if [[ '${{ github.event.inputs.force-rebuild }}' == 'true' ]]; then
-            nix-build --attr 'pkgs.${{ matrix.pname }}' --option substitute false
+          if [[ "$FORCE_REBUILD" == 'true' ]]; then
+            nix-build --attr "pkgs.$PACKAGE_NAME" --option substitute false
           else
-            nix-build --attr 'pkgs.${{ matrix.pname }}'
+            nix-build --attr "pkgs.$PACKAGE_NAME"
           fi
 
       - name: Upload artifact

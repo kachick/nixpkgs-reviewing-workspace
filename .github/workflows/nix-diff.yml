@@ -7,11 +7,14 @@ on:
 
 permissions:
   contents: read
-  pull-requests: write
 
 jobs:
   diff:
-    uses: kachick/workflows/.github/workflows/reusable-nix-diff-closures.yml@main
+    name: diff
+    permissions:
+      contents: read
+      pull-requests: write # Post closure differences to PR comments
+    uses: kachick/workflows/.github/workflows/reusable-nix-diff-closures.yml@ed82729c45e07e70b0a2531b472b0cbb7693c098 # main
     with:
       runs-on: ubuntu-26.04
       targets: devShells.x86_64-linux.default

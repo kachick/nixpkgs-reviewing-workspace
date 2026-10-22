@@ -47,11 +47,19 @@ on:
         type: string
         default: ''
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 # env:
 #   pr-number: '42' # Enable only when developing
 
 jobs:
   review:
+    name: review
     strategy:
       fail-fast: false
       matrix:
@@ -75,31 +83,33 @@ jobs:
 
       - name: Validate PR number
         if: ${{ inputs.pr-number != '' }}
+        env:
+          INPUT_PR_NUMBER: '${{ inputs.pr-number }}'
         run: |
-          input="${{ github.event.inputs.pr-number }}"
-
           # Check if the input is a positive integer (greater than 0)
-          if ! [[ "$input" =~ ^[1-9][0-9]*$ ]]; then
-            echo "❌ Error: The input \"$input\" is not a valid positive integer (e.g., 1, 42)."
+          if ! [[ "$INPUT_PR_NUMBER" =~ ^[1-9][0-9]*$ ]]; then
+            echo "❌ Error: The input \"$INPUT_PR_NUMBER\" is not a valid positive integer (e.g., 1, 42)."
             exit 1
           fi
 
-          echo "✅ Input \"$input\" is a valid positive integer."
+          echo "✅ Input \"$INPUT_PR_NUMBER\" is a valid positive integer."
 
       - name: Checkout this repository
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           path: '.repo-to-get-flake-lock'
+          persist-credentials: false
 
       - name: Move this repository to a temporary directory to avoid overlap with nixpkgs
         run: |
-          target_path="${{ runner.temp }}/${{ github.repository }}"
+          target_path="${RUNNER_TEMP}/${GITHUB_REPOSITORY}"
           mkdir -p "$(dirname "$target_path")"
           mv .repo-to-get-flake-lock "$target_path"
 
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           repository: 'NixOS/nixpkgs'
+          persist-credentials: false
 
       - name: Make sure the shallow clone or not
         # Often needed for debugging purpose. See GH-26 https://github.com/Mic92/nixpkgs-review/pull/426/files#diff-068fea7dedadb885b7dcccc0fe1bc843caa6f1da0c6622ee7a7d56e99c31475aR598-R606
@@ -115,9 +125,11 @@ jobs:
           nix config show
 
       - name: Ensure sandbox mode
+        env:
+          EXPECTED_SANDBOX: ${{ inputs.sandbox }}
         run: |
           set -x
-          [[ "$(nix config show sandbox)" == '${{ github.event.inputs.sandbox }}' ]]
+          [[ "$(nix config show sandbox)" == "$EXPECTED_SANDBOX" ]]
 
       - name: Logging disk space
         run: df -h
@@ -142,25 +154,27 @@ jobs:
           df -h
 
       - name: Install dependencies
-        run: nix profile add --inputs-from '${{ runner.temp }}/${{ github.repository }}' nixpkgs#nixpkgs-review nixpkgs#nix-eval-jobs
+        run: nix profile add --inputs-from "${RUNNER_TEMP}/${GITHUB_REPOSITORY}" nixpkgs#nixpkgs-review nixpkgs#nix-eval-jobs
 
       - name: Run binary-cached nixpkgs-review for PR
         if: ${{ inputs.pr-number != '' }}
         env:
           # https://github.com/Mic92/nixpkgs-review/blob/055465e55d131ffb1e1617f46d3bade0b87bbe69/README.md?plain=1#L239-L260
           GITHUB_TOKEN: '${{ github.token }}'
+          PR_NUMBER: '${{ inputs.pr-number }}'
         run: | # shell
           #
-          nixpkgs-review pr '${{ inputs.pr-number }}' --print-result
+          nixpkgs-review pr "$PR_NUMBER" --print-result
 
       - name: Run binary-cached nixpkgs-review for custom args
         if: ${{ inputs.args != '' }}
         env:
           # https://github.com/Mic92/nixpkgs-review/blob/055465e55d131ffb1e1617f46d3bade0b87bbe69/README.md?plain=1#L239-L260
           GITHUB_TOKEN: '${{ github.token }}'
+          REVIEW_ARGS: '${{ inputs.args }}'
         run: | # shell
           #
-          nixpkgs-review ${{ inputs.args }}
+          nixpkgs-review $REVIEW_ARGS
 
       - name: Logging disk space
         run: df -h
@@ -175,7 +189,8 @@ jobs:
           include-hidden-files: 'true' # Required for `bin/.bin-wrapped`
 
   report:
+    name: report
     needs: [review]
-    uses: ./.github/workflows/report.yml
+    uses: $/.github/workflows/report.yml
     with:
       run_id: '${{ github.run_id }}'

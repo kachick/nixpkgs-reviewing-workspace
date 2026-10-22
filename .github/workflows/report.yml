@@ -14,8 +14,16 @@ on:
         required: true
         type: string
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ inputs.run_id }}
+  cancel-in-progress: true
+
 jobs:
   report:
+    name: report
     runs-on: ubuntu-26.04
     steps:
       - uses: NixOS/nix-installer-action@62c1943b776c509394b550f3f983adc14e9212d6 # v1.0.0
@@ -27,11 +35,12 @@ jobs:
             access-tokens = github.com=${{ github.token }}
             extra-substituters = https://kachick.cachix.org
             extra-trusted-public-keys = kachick.cachix.org-1:7giZGKW03gPFkbde09JNpDKCbDGGwBuU/Z11W/jUtEQ=
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - name: Generate report
         env:
           GH_TOKEN: '${{ github.token }}'
+          TARGET_RUN_ID: '${{ inputs.run_id }}'
         run: |
-          nix run .#resume -- '${{ inputs.run_id }}' >> "$GITHUB_STEP_SUMMARY"
+          nix run .#resume -- "$TARGET_RUN_ID" >> "$GITHUB_STEP_SUMMARY"

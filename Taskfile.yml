@@ -23,6 +23,7 @@ tasks:
       - go vet ./pkgs/resume/...
       - dprint check
       - typos . .github .vscode
+      - zizmor --pedantic .
       - git ls-files | xargs nix run github:kachick/selfup/v1.3.1 -- list -check
   selfup:
     cmds:

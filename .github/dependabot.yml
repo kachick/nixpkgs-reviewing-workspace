@@ -13,3 +13,5 @@ updates:
           - '4.3.0'
           # https://github.com/actions/dependency-review-action/issues/493
           - '3.0.5'
+    cooldown:
+      default-days: 7 # 7 by zizmor's default

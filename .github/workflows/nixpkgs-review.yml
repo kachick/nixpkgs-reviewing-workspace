@@ -33,6 +33,10 @@ on:
         description: 'Free up disk space'
         type: boolean
         default: false
+      run-tests:
+        description: 'Run package tests if exist (--tests)'
+        type: boolean
+        default: false
       args:
         # Use this option if your requirement is not simple. Might be needed for mass-rebuilds.
 
@@ -191,7 +195,7 @@ jobs:
           df -h
 
       - name: Install dependencies
-        run: nix profile add --inputs-from "${RUNNER_TEMP}/${GITHUB_REPOSITORY}" nixpkgs#nixpkgs-review nixpkgs#nix-eval-jobs
+        run: nix profile add --inputs-from "${RUNNER_TEMP}/${GITHUB_REPOSITORY}" nixpkgs#nixpkgs-review nixpkgs#nix-eval-jobs nixpkgs#betterleaks
 
       - name: Run binary-cached nixpkgs-review for PR
         if: ${{ inputs.pr-number != '' }}
@@ -199,9 +203,14 @@ jobs:
           # https://github.com/Mic92/nixpkgs-review/blob/055465e55d131ffb1e1617f46d3bade0b87bbe69/README.md?plain=1#L239-L260
           GITHUB_TOKEN: '${{ github.token }}'
           PR_NUMBER: '${{ inputs.pr-number }}'
+          RUN_TESTS: '${{ inputs.run-tests }}'
         run: | # shell
           #
-          nixpkgs-review pr "$PR_NUMBER" --print-result
+          args=()
+          if [ "$RUN_TESTS" = "true" ]; then
+            args+=('--tests')
+          fi
+          nixpkgs-review pr "$PR_NUMBER" --print-result "${args[@]}"
 
       - name: Run binary-cached nixpkgs-review for custom args
         if: ${{ inputs.args != '' }}
@@ -223,6 +232,12 @@ jobs:
           MATRIX_SANDBOX: ${{ matrix.sandbox }}
         run: |
           find "${CACHE_DIR}/nixpkgs-review" -type f -name "report.md" -exec ruby -i -pe 'gsub(/^### `aarch64-darwin`/, "### `aarch64-darwin` (sandbox=" + ENV.fetch("MATRIX_SANDBOX") + ")")' {} +
+
+      - name: Scan review directory for secret leaks
+        env:
+          CACHE_DIR: ${{ steps.get-meta.outputs.cache_dir }}
+        run: |
+          betterleaks dir "${CACHE_DIR}/nixpkgs-review" --no-banner --redact=100
 
       - name: Upload artifact
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

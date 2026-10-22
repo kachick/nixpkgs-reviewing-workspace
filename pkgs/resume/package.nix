@@ -4,6 +4,7 @@
   lib,
   gh,
   coreutils,
+  betterleaks,
 }:
 buildGo127Module {
   pname = "resume";
@@ -22,6 +23,7 @@ buildGo127Module {
         lib.makeBinPath [
           gh
           coreutils
+          betterleaks
         ]
       }
   '';

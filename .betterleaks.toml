@@ -1,0 +1,9 @@
+# Ignore the fake secret token used in tests.
+# This dummy token is described in the upstream betterleaks README for testing:
+# https://github.com/betterleaks/betterleaks/blob/c613797a684337a014168063577bb6fa6e3b6296/README.md?plain=1#L178
+filter = '''
+finding.secret == "ghp_aB3dE5fG7hI9jK1mN3pQ5rS7tU9vW1xY3zA5"
+'''
+
+[extend]
+useDefault = true

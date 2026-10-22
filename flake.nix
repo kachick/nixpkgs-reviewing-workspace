@@ -54,6 +54,7 @@
 
                 nixpkgs-reviewFull
                 bubblewrap # Require to run nixpkgs-review with sandbox mode. See https://github.com/Mic92/nixpkgs-review/pull/441
+                betterleaks
                 gh
                 git
                 tree

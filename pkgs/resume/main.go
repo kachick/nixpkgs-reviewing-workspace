@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"io/fs"
@@ -141,6 +142,11 @@ func main() {
 	finalReport, err := ConcatReports(reports)
 	if err != nil {
 		log.Fatalf("Failed to concatenate reports: %v", err)
+	}
+
+	checker := &BetterleaksChecker{}
+	if err := checker.Check(context.Background(), finalReport); err != nil {
+		log.Fatalf("Secret leak check failed for combined report: %v", err)
 	}
 
 	fmt.Println()

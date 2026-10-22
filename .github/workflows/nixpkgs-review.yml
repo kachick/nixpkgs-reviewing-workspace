@@ -142,9 +142,7 @@ jobs:
           df -h
 
       - name: Install dependencies
-        run: |
-          url="$(nix eval --raw --impure --expr "(builtins.fromJSON (builtins.readFile \"${{ runner.temp }}/${{ github.repository }}/flake.lock\")).nodes.nixpkgs.locked.url")"
-          nix profile add "${url}#nixpkgs-review" "${url}#nix-eval-jobs"
+        run: nix profile add --inputs-from '${{ runner.temp }}/${{ github.repository }}' nixpkgs#nixpkgs-review nixpkgs#nix-eval-jobs
 
       - name: Run binary-cached nixpkgs-review for PR
         if: ${{ inputs.pr-number != '' }}

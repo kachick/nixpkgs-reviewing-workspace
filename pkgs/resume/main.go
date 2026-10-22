@@ -11,15 +11,15 @@ import (
 	"runtime"
 )
 
-func getCurrentAssetName() string {
+func assetNameFor(arch, osName string) string {
 	var a, o string
-	switch runtime.GOARCH {
+	switch arch {
 	case "amd64":
 		a = "X64"
 	case "arm64":
 		a = "ARM64"
 	}
-	switch runtime.GOOS {
+	switch osName {
 	case "linux":
 		o = "Linux"
 	case "darwin":
@@ -32,9 +32,27 @@ func getCurrentAssetName() string {
 	return a + "-" + o
 }
 
+func getCurrentAssetName() string {
+	return assetNameFor(runtime.GOARCH, runtime.GOOS)
+}
+
+func determineDownloadArgs(runID, tempDir, currentAssetName string, all bool) ([]string, bool) {
+	if all {
+		return []string{"run", "download", runID, "--dir", tempDir}, false
+	}
+
+	if currentAssetName != "" {
+		return []string{"run", "download", runID, "--dir", tempDir, "--pattern", "*" + currentAssetName + "*"}, false
+	}
+
+	return []string{"run", "download", runID, "--dir", tempDir}, true
+}
+
 func main() {
+	var allArtifacts bool
+	flag.BoolVar(&allArtifacts, "all", false, "download all architecture artifacts")
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "Usage: %s <run_id>\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "Usage: %s [flags] <run_id>\n", os.Args[0])
 		flag.PrintDefaults()
 	}
 	flag.Parse()
@@ -65,8 +83,13 @@ func main() {
 		log.Fatalf("Failed to create temp dir: %v", err)
 	}
 
+	downloadArgs, isUnknownArch := determineDownloadArgs(runID, tempDir, currentAssetName, allArtifacts || inRunner)
+	if isUnknownArch {
+		fmt.Fprintf(os.Stderr, "Warning: unknown host architecture/OS (%s/%s). Falling back to downloading all artifacts.\n", runtime.GOARCH, runtime.GOOS)
+	}
+
 	fmt.Fprintf(os.Stderr, "Downloading artifacts to %s...\n", tempDir)
-	downloadCmd := exec.Command("gh", "run", "download", runID, "--dir", tempDir)
+	downloadCmd := exec.Command("gh", downloadArgs...)
 	downloadCmd.Stderr = os.Stderr
 	if err := downloadCmd.Run(); err != nil {
 		log.Fatalf("Failed to download artifacts: %v", err)
@@ -122,4 +145,9 @@ func main() {
 
 	fmt.Println()
 	fmt.Println(finalReport)
+
+	if isUnknownArch {
+		fmt.Fprintf(os.Stderr, "Error: host architecture/OS (%s/%s) is unrecognized; downloaded all artifacts as fallback.\n", runtime.GOARCH, runtime.GOOS)
+		os.Exit(1)
+	}
 }

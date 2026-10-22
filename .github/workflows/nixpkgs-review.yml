@@ -13,21 +13,21 @@ on:
         required: false
         type: string # Don't use `number` type here, GitHub Apps in both Android and iOS forces them as 'Float'
         default: ''
-      runners:
-        description: 'Runners'
-        required: true
-        # It does not allow list and multiline string.
-        #   - https://github.com/orgs/community/discussions/12882
-        #   - https://github.com/actions/toolkit/issues/184
-        type: string
-        # - ubuntu-26.04 # x86_64
-        # - ubuntu-26.04-arm # aarch64-linux
-        # - macos-26 # aarch64
-        default: |
-          [ "ubuntu-26.04", "ubuntu-26.04-arm", "macos-26" ]
-      sandbox:
-        description: 'Sandbox mode'
-        type: boolean # `inputs.sandbox` will be boolean, but `github.event.inputs.sandbox` will be string. This is hacky, but useful for using the value in shellscripts
+      x86_64-linux:
+        description: 'x86_64-linux (ubuntu-26.04)'
+        type: boolean
+        default: true
+      aarch64-linux:
+        description: 'aarch64-linux (ubuntu-26.04-arm)'
+        type: boolean
+        default: true
+      aarch64-darwin:
+        description: 'aarch64-darwin (macos-26, sandbox=true)'
+        type: boolean
+        default: true
+      aarch64-darwin-relaxed:
+        description: 'aarch64-darwin (macos-26, sandbox=false)'
+        type: boolean
         default: true
       free-up-diskspace:
         description: 'Free up disk space'
@@ -58,23 +58,12 @@ concurrency:
 #   pr-number: '42' # Enable only when developing
 
 jobs:
-  review:
-    name: review
-    strategy:
-      fail-fast: false
-      matrix:
-        runner: '${{ fromJson(inputs.runners) }}'
-    continue-on-error: true # Simply avoiding the state for #91
-    runs-on: ${{ matrix.runner }}
-    # timeout-minutes: 180 # Any limitations might not fit for this repository. So temporary disabling
+  setup:
+    name: setup
+    runs-on: ubuntu-26.04
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
-      - name: Make sure dependent environments
-        id: get-meta
-        run: | # shell
-          #
-          # https://github.com/Mic92/nixpkgs-review/blob/055465e55d131ffb1e1617f46d3bade0b87bbe69/nixpkgs_review/builddir.py#L24-L36
-          echo "cache_dir=${XDG_CACHE_HOME:-${HOME}/.cache}" | tee -a "$GITHUB_OUTPUT"
-
       - name: Validate options
         if: ${{ inputs.args != '' && inputs.pr-number != '' }}
         run: |
@@ -93,6 +82,54 @@ jobs:
           fi
 
           echo "✅ Input \"$INPUT_PR_NUMBER\" is a valid positive integer."
+
+      - name: Generate matrix
+        id: set-matrix
+        env:
+          ENABLE_X86_64_LINUX: ${{ inputs.x86_64-linux }}
+          ENABLE_AARCH64_LINUX: ${{ inputs.aarch64-linux }}
+          ENABLE_AARCH64_DARWIN: ${{ inputs.aarch64-darwin }}
+          ENABLE_AARCH64_DARWIN_RELAXED: ${{ inputs.aarch64-darwin-relaxed }}
+        run: |
+          matrix=()
+          if [ "$ENABLE_X86_64_LINUX" = "true" ]; then
+            matrix+=('{"name":"x86_64-linux","runner":"ubuntu-26.04","sandbox":true,"asset_name":"X64-Linux"}')
+          fi
+          if [ "$ENABLE_AARCH64_LINUX" = "true" ]; then
+            matrix+=('{"name":"aarch64-linux","runner":"ubuntu-26.04-arm","sandbox":true,"asset_name":"ARM64-Linux"}')
+          fi
+          if [ "$ENABLE_AARCH64_DARWIN" = "true" ]; then
+            matrix+=('{"name":"aarch64-darwin (sandbox=true)","runner":"macos-26","sandbox":true,"asset_name":"ARM64-macOS-sandbox-true"}')
+          fi
+          if [ "$ENABLE_AARCH64_DARWIN_RELAXED" = "true" ]; then
+            matrix+=('{"name":"aarch64-darwin (sandbox=false)","runner":"macos-26","sandbox":false,"asset_name":"ARM64-macOS-sandbox-false"}')
+          fi
+
+          if [ ${#matrix[@]} -eq 0 ]; then
+            echo "❌ Error: At least one target must be selected." >&2
+            exit 1
+          fi
+
+          json="[$(IFS=,; echo "${matrix[*]}")]"
+          echo "matrix=$json" >> "$GITHUB_OUTPUT"
+
+  review:
+    name: review (${{ matrix.name }})
+    needs: [setup]
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.setup.outputs.matrix) }}
+    continue-on-error: true # Simply avoiding the state for #91
+    runs-on: ${{ matrix.runner }}
+    # timeout-minutes: 180 # Any limitations might not fit for this repository. So temporary disabling
+    steps:
+      - name: Make sure dependent environments
+        id: get-meta
+        run: | # shell
+          #
+          # https://github.com/Mic92/nixpkgs-review/blob/055465e55d131ffb1e1617f46d3bade0b87bbe69/nixpkgs_review/builddir.py#L24-L36
+          echo "cache_dir=${XDG_CACHE_HOME:-${HOME}/.cache}" | tee -a "$GITHUB_OUTPUT"
 
       - name: Checkout this repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -118,7 +155,7 @@ jobs:
       - uses: NixOS/nix-installer-action@62c1943b776c509394b550f3f983adc14e9212d6 # v1.0.0
         with:
           extra-conf: |
-            sandbox = ${{ github.event.inputs.sandbox }}
+            sandbox = ${{ matrix.sandbox }}
       - name: Outputs nix version and the config
         run: |
           nix --version
@@ -126,7 +163,7 @@ jobs:
 
       - name: Ensure sandbox mode
         env:
-          EXPECTED_SANDBOX: ${{ inputs.sandbox }}
+          EXPECTED_SANDBOX: ${{ matrix.sandbox }}
         run: |
           set -x
           [[ "$(nix config show sandbox)" == "$EXPECTED_SANDBOX" ]]
@@ -179,10 +216,18 @@ jobs:
       - name: Logging disk space
         run: df -h
 
+      - name: Annotate Darwin sandbox setting in report
+        if: ${{ runner.os == 'macOS' }}
+        env:
+          CACHE_DIR: ${{ steps.get-meta.outputs.cache_dir }}
+          MATRIX_SANDBOX: ${{ matrix.sandbox }}
+        run: |
+          find "${CACHE_DIR}/nixpkgs-review" -type f -name "report.md" -exec ruby -i -pe 'gsub(/^### `aarch64-darwin`/, "### `aarch64-darwin` (sandbox=" + ENV.fetch("MATRIX_SANDBOX") + ")")' {} +
+
       - name: Upload artifact
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: 'nixpkgs-review-files-pr-${{ inputs.pr-number }}-${{ runner.arch }}-${{ runner.os }}'
+          name: 'nixpkgs-review-files-pr-${{ inputs.pr-number }}-${{ matrix.asset_name }}'
           path: '${{ steps.get-meta.outputs.cache_dir }}/nixpkgs-review/'
           if-no-files-found: 'error'
           # This is a broken change in their minor version updates. See https://github.com/actions/upload-artifact/commit/cb6558bb10fe4afe4054d0be4b3136e673eb5e7f and https://github.com/actions/upload-artifact/pull/598

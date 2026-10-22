@@ -43,11 +43,11 @@ func extractAssetName(path string) string {
 	return ""
 }
 
-func getPriority(path string) (int, int) {
+func getPriority(path string) (int, int, int) {
 	assetName := extractAssetName(path)
 	nix, ok := NixByAssetName[assetName]
 	if !ok {
-		return 999, 999 // Unknown
+		return 999, 999, 999 // Unknown
 	}
 
 	tier := nix.Tier
@@ -56,17 +56,25 @@ func getPriority(path string) (int, int) {
 		myFavor = 1 // Simplified: 0 for Linux, 1 for others (macOS)
 	}
 
-	return tier, myFavor
+	relaxed := 0
+	if strings.Contains(path, "sandbox-false") {
+		relaxed = 1
+	}
+
+	return tier, myFavor, relaxed
 }
 
 func SortPaths(paths []string) {
 	sort.Slice(paths, func(i, j int) bool {
-		tI, fI := getPriority(paths[i])
-		tJ, fJ := getPriority(paths[j])
+		tI, fI, rI := getPriority(paths[i])
+		tJ, fJ, rJ := getPriority(paths[j])
 
 		if tI != tJ {
 			return tI < tJ
 		}
-		return fI < fJ
+		if fI != fJ {
+			return fI < fJ
+		}
+		return rI < rJ
 	})
 }

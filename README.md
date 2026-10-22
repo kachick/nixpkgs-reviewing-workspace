@@ -50,3 +50,10 @@ nix run .#fzf-resume
 
 Faster feedbacks much help us while early stage of adding or updating package.\
 You can use [another workflow](https://github.com/kachick/nixpkgs-reviewing-workspace/actions/workflows/build.yml) for that purpose even if not yet sending a PR.
+
+## Recommended Alternative
+
+Consider using [nixpkgs-review-gha](https://github.com/Defelo/nixpkgs-review-gha) instead.
+
+This repository started early, but `nixpkgs-review-gha` is now the community standard and provides great flexibility for general use.
+The author keeps this project only for personal use and quick customization.

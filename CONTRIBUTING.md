@@ -1,5 +1,11 @@
 # How to develop
 
+## Supported host environment
+
+The goal of this project is to test builds on multiple platforms that differ from the host. However, the local tools currently assume `x86_64-linux` as the host OS to match the author's personal setup.
+
+Rather than hiding unexpected patterns or trying to support every host architecture, the tools should report clear errors when running on unexpected host platforms.
+
 ## Pull requests
 
 This repository does not accept pull requests from outside for now.

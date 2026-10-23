@@ -46,7 +46,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ inputs.pnames }}-${{ inputs.repository }}-${{ inputs.ref }}
   cancel-in-progress: true
 
 # env: # Enable only when developing

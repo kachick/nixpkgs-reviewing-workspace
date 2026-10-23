@@ -28,3 +28,14 @@
     1. Scan review artifacts with `betterleaks` before uploading.
     2. Scan combined reports in `resume` with `betterleaks` before printing to summary or stdout.
     3. Fail the job if any potential secret leak is detected (fail-safe).
+
+### Binary Cache Management & Token Isolation
+
+- **Step isolation for Cachix authentication**:
+  - `CACHIX_AUTH_TOKEN` is passed only to the push step after `nixpkgs-review` finishes.
+  - The review execution step runs without `CACHIX_AUTH_TOKEN` in its environment to reduce secret exposure risks during evaluation, building, and tests.
+- **Cache pin naming and retention**:
+  - Pin names use `review-nixpkgs-<pr-number>` (or `review-nixpkgs-<args-hash>` for custom args).
+  - Built packages are grouped into a `linkFarm` derivation and pinned with `--keep-days 21`.
+- **Upload size threshold**:
+  - Pushes larger than 2 GiB in total package size are skipped with an Actions warning to avoid wasting cache storage.

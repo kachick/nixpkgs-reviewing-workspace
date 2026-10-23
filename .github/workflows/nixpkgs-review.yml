@@ -160,6 +160,8 @@ jobs:
         with:
           extra-conf: |
             sandbox = ${{ matrix.sandbox }}
+            extra-substituters = https://kachick.cachix.org
+            extra-trusted-public-keys = kachick.cachix.org-1:7giZGKW03gPFkbde09JNpDKCbDGGwBuU/Z11W/jUtEQ=
       - name: Outputs nix version and the config
         run: |
           nix --version
@@ -195,7 +197,7 @@ jobs:
           df -h
 
       - name: Install dependencies
-        run: nix profile add --inputs-from "${RUNNER_TEMP}/${GITHUB_REPOSITORY}" nixpkgs#nixpkgs-review nixpkgs#nix-eval-jobs nixpkgs#betterleaks
+        run: nix profile add --inputs-from "${RUNNER_TEMP}/${GITHUB_REPOSITORY}" nixpkgs#nixpkgs-review nixpkgs#nix-eval-jobs nixpkgs#betterleaks nixpkgs#cachix
 
       - name: Record nixpkgs-review version
         env:
@@ -245,6 +247,75 @@ jobs:
           CACHE_DIR: ${{ steps.get-meta.outputs.cache_dir }}
         run: |
           betterleaks dir "${CACHE_DIR}/nixpkgs-review" --no-banner --redact=100
+
+      - name: Push and pin packages to Cachix
+        env:
+          CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
+          CACHE_DIR: ${{ steps.get-meta.outputs.cache_dir }}
+          PR_NUMBER: '${{ inputs.pr-number }}'
+          REVIEW_ARGS: '${{ inputs.args }}'
+        run: | # shell
+          #
+          if [ -z "$CACHIX_AUTH_TOKEN" ]; then
+            echo "CACHIX_AUTH_TOKEN is not set; skipping Cachix push"
+            exit 0
+          fi
+
+          results_dir="$(find "${CACHE_DIR}/nixpkgs-review" -type d -name "results" | head -n 1)"
+          if [ -z "$results_dir" ] || [ ! -d "$results_dir" ]; then
+            echo "No results directory found; skipping Cachix push"
+            exit 0
+          fi
+
+          entries=()
+          store_paths=()
+          for item in "$results_dir"/*; do
+            [ -e "$item" ] || continue
+            target="$(readlink "$item")"
+            [ -e "$target" ] || continue
+            name="$(basename "$item")"
+            entries+=("{ name = \"$name\"; path = builtins.storePath \"$target\"; }")
+            store_paths+=("$target")
+          done
+
+          if [ ${#store_paths[@]} -eq 0 ]; then
+            echo "No built packages found in $results_dir; skipping Cachix push"
+            exit 0
+          fi
+
+          unique_store_paths=()
+          while IFS= read -r p; do
+            [ -n "$p" ] && unique_store_paths+=("$p")
+          done < <(printf '%s\n' "${store_paths[@]}" | sort -u)
+
+          # Check size limit: skip if total NAR size exceeds 2GiB (2 * 1024 * 1024 * 1024 bytes)
+          max_bytes=$((2 * 1024 * 1024 * 1024))
+          total_bytes=$(nix path-info --size "${unique_store_paths[@]}" | awk '{sum += $2} END {print sum}')
+
+          if [ -n "$total_bytes" ] && [ "$total_bytes" -gt "$max_bytes" ]; then
+            echo "::warning::Skipping Cachix push: total package size (${total_bytes} bytes) exceeds 2GiB limit"
+            exit 0
+          fi
+
+          if [ -n "$PR_NUMBER" ]; then
+            pin_name="review-nixpkgs-${PR_NUMBER}"
+          elif [ -n "$REVIEW_ARGS" ]; then
+            if command -v sha256sum > /dev/null 2>&1; then
+              args_hash=$(echo -n "$REVIEW_ARGS" | sha256sum | cut -c1-12)
+            else
+              args_hash=$(echo -n "$REVIEW_ARGS" | shasum -a 256 | cut -c1-12)
+            fi
+            pin_name="review-nixpkgs-${args_hash}"
+          else
+            echo "::warning::Neither PR_NUMBER nor REVIEW_ARGS is provided. Skipping Cachix pin."
+            exit 0
+          fi
+
+          nix_expr="let pkgs = import <nixpkgs> {}; in pkgs.linkFarm \"${pin_name}\" [ $(printf '%s ' "${entries[@]}") ]"
+          link_farm_path=$(nix build --impure --no-link --print-out-paths --expr "$nix_expr")
+
+          cachix push kachick "$link_farm_path" "${unique_store_paths[@]}"
+          cachix pin kachick "$pin_name" "$link_farm_path" --keep-days 21
 
       - name: Upload artifact
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

@@ -1,6 +1,8 @@
 package main
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -117,31 +119,102 @@ func TestBuildRunURL(t *testing.T) {
 
 func TestAppendFooter(t *testing.T) {
 	tests := []struct {
-		name   string
-		report string
-		runURL string
-		want   string
+		name    string
+		report  string
+		runURL  string
+		version string
+		want    string
 	}{
 		{
-			name:   "report without trailing newline",
-			report: "hello world",
-			runURL: "https://github.com/kachick/nixpkgs-reviewing-workspace/actions/runs/123",
-			want:   "hello world\n\n---\n\n[Built in this run](https://github.com/kachick/nixpkgs-reviewing-workspace/actions/runs/123)\n",
+			name:    "report without trailing newline and without version",
+			report:  "hello world",
+			runURL:  "https://github.com/kachick/nixpkgs-reviewing-workspace/actions/runs/123",
+			version: "",
+			want:    "hello world\n\n---\n\n[Built in this run](https://github.com/kachick/nixpkgs-reviewing-workspace/actions/runs/123)\n",
 		},
 		{
-			name:   "report with trailing newlines",
-			report: "hello world\n\n",
-			runURL: "https://github.com/kachick/nixpkgs-reviewing-workspace/actions/runs/123",
-			want:   "hello world\n\n---\n\n[Built in this run](https://github.com/kachick/nixpkgs-reviewing-workspace/actions/runs/123)\n",
+			name:    "report with trailing newlines and without version",
+			report:  "hello world\n\n",
+			runURL:  "https://github.com/kachick/nixpkgs-reviewing-workspace/actions/runs/123",
+			version: "",
+			want:    "hello world\n\n---\n\n[Built in this run](https://github.com/kachick/nixpkgs-reviewing-workspace/actions/runs/123)\n",
+		},
+		{
+			name:    "report with version",
+			report:  "hello world",
+			runURL:  "https://github.com/kachick/nixpkgs-reviewing-workspace/actions/runs/123",
+			version: "nixpkgs-review 4.0.0",
+			want:    "hello world\n\n---\n\n[Built in this run](https://github.com/kachick/nixpkgs-reviewing-workspace/actions/runs/123) (nixpkgs-review 4.0.0)\n",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := appendFooter(tt.report, tt.runURL)
-			if got != tt.want {
-				t.Errorf("appendFooter() mismatch (-want +got):\n%s", cmp.Diff(tt.want, got))
+			got := appendFooter(tt.report, tt.runURL, tt.version)
+			if diff := cmp.Diff(tt.want, got); diff != "" {
+				t.Errorf("appendFooter() mismatch (-want +got):\n%s", diff)
 			}
 		})
 	}
+}
+
+func TestFindReviewVersion(t *testing.T) {
+	t.Run("returns empty string when file does not exist", func(t *testing.T) {
+		tempDir := t.TempDir()
+		got, err := findReviewVersion(tempDir)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if got != "" {
+			t.Errorf("findReviewVersion() = %q, want empty string", got)
+		}
+	})
+
+	t.Run("finds version file in nested directory", func(t *testing.T) {
+		tempDir := t.TempDir()
+		subDir := filepath.Join(tempDir, "pr-123")
+		if err := os.MkdirAll(subDir, 0o755); err != nil {
+			t.Fatalf("failed to create sub dir: %v", err)
+		}
+		versionFile := filepath.Join(subDir, reviewVersionFileName)
+		if err := os.WriteFile(versionFile, []byte("nixpkgs-review 4.0.0\n"), 0o644); err != nil {
+			t.Fatalf("failed to write version file: %v", err)
+		}
+
+		got, err := findReviewVersion(tempDir)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		want := "nixpkgs-review 4.0.0"
+		if got != want {
+			t.Errorf("findReviewVersion() = %q, want %q", got, want)
+		}
+	})
+
+	t.Run("skips empty version files and picks first valid", func(t *testing.T) {
+		tempDir := t.TempDir()
+		dirA := filepath.Join(tempDir, "a")
+		dirB := filepath.Join(tempDir, "b")
+		if err := os.MkdirAll(dirA, 0o755); err != nil {
+			t.Fatalf("failed to create dirA: %v", err)
+		}
+		if err := os.MkdirAll(dirB, 0o755); err != nil {
+			t.Fatalf("failed to create dirB: %v", err)
+		}
+		if err := os.WriteFile(filepath.Join(dirA, reviewVersionFileName), []byte("  \n"), 0o644); err != nil {
+			t.Fatalf("failed to write empty version file: %v", err)
+		}
+		if err := os.WriteFile(filepath.Join(dirB, reviewVersionFileName), []byte("nixpkgs-review 4.0.0\n"), 0o644); err != nil {
+			t.Fatalf("failed to write version file: %v", err)
+		}
+
+		got, err := findReviewVersion(tempDir)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		want := "nixpkgs-review 4.0.0"
+		if got != want {
+			t.Errorf("findReviewVersion() = %q, want %q", got, want)
+		}
+	})
 }

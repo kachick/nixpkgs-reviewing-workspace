@@ -197,6 +197,13 @@ jobs:
       - name: Install dependencies
         run: nix profile add --inputs-from "${RUNNER_TEMP}/${GITHUB_REPOSITORY}" nixpkgs#nixpkgs-review nixpkgs#nix-eval-jobs nixpkgs#betterleaks
 
+      - name: Record nixpkgs-review version
+        env:
+          CACHE_DIR: ${{ steps.get-meta.outputs.cache_dir }}
+        run: |
+          mkdir -p "${CACHE_DIR}/nixpkgs-review"
+          nixpkgs-review --version | tee "${CACHE_DIR}/nixpkgs-review/nixpkgs-review-version.txt"
+
       - name: Run binary-cached nixpkgs-review for PR
         if: ${{ inputs.pr-number != '' }}
         env:

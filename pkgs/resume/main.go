@@ -65,8 +65,37 @@ func buildRunURL(serverURL, repository, runID string) string {
 	return fmt.Sprintf("%s/%s/actions/runs/%s", serverURL, repository, runID)
 }
 
-func appendFooter(report, runURL string) string {
+const reviewVersionFileName = "nixpkgs-review-version.txt"
+
+func findReviewVersion(dir string) (string, error) {
+	var version string
+	err := filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if !d.IsDir() && filepath.Base(path) == reviewVersionFileName {
+			content, err := os.ReadFile(path)
+			if err != nil {
+				return err
+			}
+			v := strings.TrimSpace(string(content))
+			if v != "" && version == "" {
+				version = v
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return "", err
+	}
+	return version, nil
+}
+
+func appendFooter(report, runURL, version string) string {
 	trimmed := strings.TrimRight(report, "\n")
+	if version != "" {
+		return fmt.Sprintf("%s\n\n---\n\n[Built in this run](%s) (%s)\n", trimmed, runURL, version)
+	}
 	return fmt.Sprintf("%s\n\n---\n\n[Built in this run](%s)\n", trimmed, runURL)
 }
 
@@ -166,7 +195,11 @@ func main() {
 	}
 
 	runURL := buildRunURL(os.Getenv("GITHUB_SERVER_URL"), os.Getenv("GITHUB_REPOSITORY"), runID)
-	finalReport = appendFooter(finalReport, runURL)
+	reviewVersion, err := findReviewVersion(tempDir)
+	if err != nil {
+		log.Printf("Warning: failed to read review version: %v", err)
+	}
+	finalReport = appendFooter(finalReport, runURL, reviewVersion)
 
 	checker := &BetterleaksChecker{}
 	if err := checker.Check(context.Background(), finalReport); err != nil {

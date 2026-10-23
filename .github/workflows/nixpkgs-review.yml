@@ -37,6 +37,10 @@ on:
         description: 'Run package tests if exist (--tests)'
         type: boolean
         default: false
+      push-cache:
+        description: 'Push built packages to Cachix (x86_64-linux only)'
+        type: boolean
+        default: true
       args:
         # Use this option if your requirement is not simple. Might be needed for mass-rebuilds.
 
@@ -249,6 +253,7 @@ jobs:
           betterleaks dir "${CACHE_DIR}/nixpkgs-review" --no-banner --redact=100
 
       - name: Push and pin packages to Cachix
+        if: ${{ inputs.push-cache && matrix.name == 'x86_64-linux' }}
         env:
           CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
           CACHE_DIR: ${{ steps.get-meta.outputs.cache_dir }}

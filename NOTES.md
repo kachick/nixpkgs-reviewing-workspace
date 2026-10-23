@@ -39,3 +39,5 @@
   - Built packages are grouped into a `linkFarm` derivation and pinned with `--keep-days 21`.
 - **Upload size threshold**:
   - Pushes larger than 2 GiB in total package size are skipped with an Actions warning to avoid wasting cache storage.
+- **Target runner and opt-out**:
+  - Pushes run only on `x86_64-linux` runners and can be disabled with the `push-cache` workflow input.

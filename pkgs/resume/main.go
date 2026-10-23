@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 )
 
 func assetNameFor(arch, osName string) string {
@@ -47,6 +48,26 @@ func determineDownloadArgs(runID, tempDir, currentAssetName string, all bool) ([
 	}
 
 	return []string{"run", "download", runID, "--dir", tempDir}, true
+}
+
+const (
+	defaultServerURL  = "https://github.com"
+	defaultRepository = "kachick/nixpkgs-reviewing-workspace"
+)
+
+func buildRunURL(serverURL, repository, runID string) string {
+	if serverURL == "" {
+		serverURL = defaultServerURL
+	}
+	if repository == "" {
+		repository = defaultRepository
+	}
+	return fmt.Sprintf("%s/%s/actions/runs/%s", serverURL, repository, runID)
+}
+
+func appendFooter(report, runURL string) string {
+	trimmed := strings.TrimRight(report, "\n")
+	return fmt.Sprintf("%s\n\n---\n\n[Built in this run](%s)\n", trimmed, runURL)
 }
 
 func main() {
@@ -143,6 +164,9 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to concatenate reports: %v", err)
 	}
+
+	runURL := buildRunURL(os.Getenv("GITHUB_SERVER_URL"), os.Getenv("GITHUB_REPOSITORY"), runID)
+	finalReport = appendFooter(finalReport, runURL)
 
 	checker := &BetterleaksChecker{}
 	if err := checker.Check(context.Background(), finalReport); err != nil {

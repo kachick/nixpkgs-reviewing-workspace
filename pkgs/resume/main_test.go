@@ -80,3 +80,68 @@ func TestDetermineDownloadArgs(t *testing.T) {
 		})
 	}
 }
+
+func TestBuildRunURL(t *testing.T) {
+	tests := []struct {
+		name       string
+		serverURL  string
+		repository string
+		runID      string
+		want       string
+	}{
+		{
+			name:       "default fallback when env vars are empty",
+			serverURL:  "",
+			repository: "",
+			runID:      "123456",
+			want:       "https://github.com/kachick/nixpkgs-reviewing-workspace/actions/runs/123456",
+		},
+		{
+			name:       "custom server and repository",
+			serverURL:  "https://custom.github.com",
+			repository: "custom-owner/custom-repo",
+			runID:      "789012",
+			want:       "https://custom.github.com/custom-owner/custom-repo/actions/runs/789012",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := buildRunURL(tt.serverURL, tt.repository, tt.runID)
+			if got != tt.want {
+				t.Errorf("buildRunURL() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestAppendFooter(t *testing.T) {
+	tests := []struct {
+		name   string
+		report string
+		runURL string
+		want   string
+	}{
+		{
+			name:   "report without trailing newline",
+			report: "hello world",
+			runURL: "https://github.com/kachick/nixpkgs-reviewing-workspace/actions/runs/123",
+			want:   "hello world\n\n---\n\n[Built in this run](https://github.com/kachick/nixpkgs-reviewing-workspace/actions/runs/123)\n",
+		},
+		{
+			name:   "report with trailing newlines",
+			report: "hello world\n\n",
+			runURL: "https://github.com/kachick/nixpkgs-reviewing-workspace/actions/runs/123",
+			want:   "hello world\n\n---\n\n[Built in this run](https://github.com/kachick/nixpkgs-reviewing-workspace/actions/runs/123)\n",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := appendFooter(tt.report, tt.runURL)
+			if got != tt.want {
+				t.Errorf("appendFooter() mismatch (-want +got):\n%s", cmp.Diff(tt.want, got))
+			}
+		})
+	}
+}

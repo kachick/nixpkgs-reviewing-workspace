@@ -41,3 +41,5 @@
   - Pushes larger than 2 GiB in total package size are skipped with an Actions warning to avoid wasting cache storage.
 - **Target runner and opt-out**:
   - Pushes run only on `x86_64-linux` runners and can be disabled with the `push-cache` workflow input.
+- **Excluding downstream rebuilds**:
+  - Only root review targets are uploaded and pinned to Cachix. Downstream packages rebuilt as side-effects are filtered out by inspecting Nix package requisites.

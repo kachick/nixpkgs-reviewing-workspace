@@ -272,16 +272,44 @@ jobs:
             exit 0
           fi
 
+          # Filter out downstream rebuilds: keep only root targets that do not depend on other results
+          filtered_items=$(ruby -e '
+            require "set"
+            results_dir = ARGV[0]
+            items = Dir.glob("#{results_dir}/*").select { |f| File.exist?(f) }
+            exit 0 if items.empty?
+
+            targets = items.to_h { |item| [item, File.realpath(item)] }
+            unique_targets = targets.values.uniq
+
+            if unique_targets.size > 1
+              requisites_map = unique_targets.to_h do |target|
+                [target, Set.new(`nix-store -q --requisites #{target}`.split)]
+              end
+
+              root_targets = unique_targets.select do |target|
+                others = unique_targets - [target]
+                (requisites_map[target] & others).empty?
+              end
+
+              unique_targets = root_targets unless root_targets.empty?
+            end
+
+            items.each do |item|
+              target = targets[item]
+              if unique_targets.include?(target)
+                puts "#{File.basename(item)}\t#{target}"
+              end
+            end
+          ' "$results_dir")
+
           entries=()
           store_paths=()
-          for item in "$results_dir"/*; do
-            [ -e "$item" ] || continue
-            target="$(readlink "$item")"
-            [ -e "$target" ] || continue
-            name="$(basename "$item")"
+          while IFS=$'\t' read -r name target; do
+            [ -n "$name" ] && [ -n "$target" ] || continue
             entries+=("{ name = \"$name\"; path = builtins.storePath \"$target\"; }")
             store_paths+=("$target")
-          done
+          done <<< "$filtered_items"
 
           if [ ${#store_paths[@]} -eq 0 ]; then
             echo "No built packages found in $results_dir; skipping Cachix push"

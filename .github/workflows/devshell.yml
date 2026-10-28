@@ -2,27 +2,7 @@ name: 🐚
 on:
   push:
     branches: [main]
-    paths:
-      - '.github/workflows/devshell.yml'
-      - '**.nix'
-      - 'flake.*'
-      - '.envrc'
-      - 'Taskfile.yml'
-      - 'go.*'
-      - '**.go'
-      - '**.bash'
-      - 'pkgs/**'
   pull_request:
-    paths:
-      - '.github/workflows/devshell.yml'
-      - '**.nix'
-      - 'flake.*'
-      - '.envrc'
-      - 'Taskfile.yml'
-      - 'go.*'
-      - '**.go'
-      - '**.bash'
-      - 'pkgs/**'
   schedule:
     # Every 10:42 JST
     # https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#schedule

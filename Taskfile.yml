@@ -29,3 +29,4 @@ tasks:
       - dprint check
       - typos . .github
       - zizmor --pedantic .
+      - pnpm dlx github:kachick/ghadiag#d954502858fe913fc6de35e9e3fecc228e4e2547

@@ -67,6 +67,8 @@
                 hydra-check
 
                 zizmor
+                nodejs_26
+                pnpm
               ]
             );
           };

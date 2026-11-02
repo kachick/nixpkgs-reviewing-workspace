@@ -54,6 +54,8 @@ jobs:
           direnv allow .
           direnv export gha > "$GITHUB_ENV"
       - run: task check
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
       - name: Push and pin packages to Cachix
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:

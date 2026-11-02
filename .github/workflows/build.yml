@@ -24,18 +24,21 @@ on:
         default: 'nixpkgs-unstable'
         required: true
         type: string
-      runners:
-        description: 'Runners'
-        required: true
-        # It does not allow list and multiline string.
-        #   - https://github.com/orgs/community/discussions/12882
-        #   - https://github.com/actions/toolkit/issues/184
-        type: string
-        default: |
-          [ "ubuntu-26.04", "ubuntu-26.04-arm", "macos-26" ]
-      sandbox:
-        description: 'Sandbox mode'
-        type: boolean # `inputs.sandbox` will be boolean, but `github.event.inputs.sandbox` will be string. This is hacky, but useful for using the value in shellscripts
+      x86_64-linux:
+        description: 'x86_64-linux (ubuntu-26.04)'
+        type: boolean
+        default: true
+      aarch64-linux:
+        description: 'aarch64-linux (ubuntu-26.04-arm)'
+        type: boolean
+        default: true
+      aarch64-darwin:
+        description: 'aarch64-darwin (macos-26, sandbox=true)'
+        type: boolean
+        default: true
+      aarch64-darwin-relaxed:
+        description: 'aarch64-darwin (macos-26, sandbox=false)'
+        type: boolean
         default: true
       force-rebuild:
         description: Force rebuild
@@ -55,14 +58,51 @@ concurrency:
 #   ref: 'aa32ada9e1344d0a3abb64ffc806f8b07732fe4c'
 
 jobs:
+  setup:
+    name: setup
+    runs-on: ubuntu-26.04
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Generate matrix
+        id: set-matrix
+        env:
+          ENABLE_X86_64_LINUX: ${{ inputs.x86_64-linux }}
+          ENABLE_AARCH64_LINUX: ${{ inputs.aarch64-linux }}
+          ENABLE_AARCH64_DARWIN: ${{ inputs.aarch64-darwin }}
+          ENABLE_AARCH64_DARWIN_RELAXED: ${{ inputs.aarch64-darwin-relaxed }}
+        run: |
+          matrix=()
+          if [ "$ENABLE_X86_64_LINUX" = "true" ]; then
+            matrix+=('{"name":"x86_64-linux","runner":"ubuntu-26.04","sandbox":true,"asset_name":"X64-Linux"}')
+          fi
+          if [ "$ENABLE_AARCH64_LINUX" = "true" ]; then
+            matrix+=('{"name":"aarch64-linux","runner":"ubuntu-26.04-arm","sandbox":true,"asset_name":"ARM64-Linux"}')
+          fi
+          if [ "$ENABLE_AARCH64_DARWIN" = "true" ]; then
+            matrix+=('{"name":"aarch64-darwin (sandbox=true)","runner":"macos-26","sandbox":true,"asset_name":"ARM64-macOS-sandbox-true"}')
+          fi
+          if [ "$ENABLE_AARCH64_DARWIN_RELAXED" = "true" ]; then
+            matrix+=('{"name":"aarch64-darwin (sandbox=false)","runner":"macos-26","sandbox":false,"asset_name":"ARM64-macOS-sandbox-false"}')
+          fi
+
+          if [ ${#matrix[@]} -eq 0 ]; then
+            echo "❌ Error: At least one target must be selected." >&2
+            exit 1
+          fi
+
+          json="[$(IFS=,; echo "${matrix[*]}")]"
+          echo "matrix=$json" >> "$GITHUB_OUTPUT"
+
   build:
-    name: build
+    name: build (${{ matrix.target.name }}, ${{ matrix.pname }})
+    needs: [setup]
     strategy:
       fail-fast: false
       matrix:
-        runner: '${{ fromJson(inputs.runners) }}'
-        pname: '${{ fromJson(inputs.pnames) }}'
-    runs-on: ${{ matrix.runner }}
+        target: ${{ fromJson(needs.setup.outputs.matrix) }}
+        pname: ${{ fromJson(inputs.pnames) }}
+    runs-on: ${{ matrix.target.runner }}
     # timeout-minutes: 180 # Any limitations might not fit for this repository. So temporary disabling
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -74,7 +114,7 @@ jobs:
       - uses: NixOS/nix-installer-action@62c1943b776c509394b550f3f983adc14e9212d6 # v1.0.0
         with:
           extra-conf: |
-            sandbox = ${{ github.event.inputs.sandbox }}
+            sandbox = ${{ matrix.target.sandbox }}
 
       - name: Outputs nix version and the config
         run: |
@@ -83,7 +123,7 @@ jobs:
 
       - name: Ensure sandbox mode
         env:
-          EXPECTED_SANDBOX: ${{ inputs.sandbox }}
+          EXPECTED_SANDBOX: ${{ matrix.target.sandbox }}
         run: |
           set -x
           [[ "$(nix config show sandbox)" == "$EXPECTED_SANDBOX" ]]
@@ -102,7 +142,7 @@ jobs:
       - name: Sanitize artifact name
         id: artifact
         env:
-          RAW_NAME: 'build-${{ matrix.pname }}-${{ inputs.ref }}-${{ runner.arch }}-${{ runner.os }}'
+          RAW_NAME: 'build-${{ matrix.pname }}-${{ inputs.ref }}-${{ matrix.target.asset_name }}'
         run: |
           sanitized=$(printf '%s' "$RAW_NAME" | tr '/\\:*?"<>|\r\n' '-')
           echo "name=$sanitized" >> "$GITHUB_OUTPUT"

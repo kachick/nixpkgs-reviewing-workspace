@@ -99,11 +99,18 @@ jobs:
             nix-build --attr "pkgs.$PACKAGE_NAME"
           fi
 
+      - name: Sanitize artifact name
+        id: artifact
+        env:
+          RAW_NAME: 'build-${{ matrix.pname }}-${{ inputs.ref }}-${{ runner.arch }}-${{ runner.os }}'
+        run: |
+          sanitized=$(printf '%s' "$RAW_NAME" | tr '/\\:*?"<>|\r\n' '-')
+          echo "name=$sanitized" >> "$GITHUB_OUTPUT"
+
       - name: Upload artifact
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          # Should trim `-` for path available if using inputs.repository
-          name: 'build-${{ matrix.pname }}-${{ inputs.ref }}-${{ runner.arch }}-${{ runner.os }}'
+          name: '${{ steps.artifact.outputs.name }}'
           path: './result*'
           if-no-files-found: 'error'
           # This is a broken change in their minor version updates. See https://github.com/actions/upload-artifact/commit/cb6558bb10fe4afe4054d0be4b3136e673eb5e7f and https://github.com/actions/upload-artifact/pull/598

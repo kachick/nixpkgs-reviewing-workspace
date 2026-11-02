@@ -350,6 +350,35 @@ jobs:
           cachix push kachick "$link_farm_path" "${unique_store_paths[@]}"
           cachix pin kachick "$pin_name" "$link_farm_path" --keep-days 21
 
+      # Disallowed characters by actions/upload-artifact: ", :, <, >, |, *, ?, \r, \n, \
+      # Resolves issue #144 where man files like `TakTuk::Pilot.3.gz` break upload-artifact
+      - name: Sanitize cache files for upload-artifact
+        env:
+          CACHE_DIR: ${{ steps.get-meta.outputs.cache_dir }}
+        run: |
+          target_dir="${CACHE_DIR}/nixpkgs-review"
+          if [ -d "$target_dir" ]; then
+            # 1. Archive symlinks pointing to directories containing disallowed characters
+            find "$target_dir" -type l | while IFS= read -r symlink; do
+              if [ -d "$symlink" ]; then
+                if [ -n "$(find -L "$symlink" -name '*[:"*?<>|]*' | head -n 1)" ]; then
+                  echo "Archiving problematic symlink: $symlink"
+                  tar -czf "${symlink}.tar.gz" -C "$symlink" .
+                  rm "$symlink"
+                fi
+              fi
+            done
+
+            # 2. Sanitize any regular files or directories directly containing disallowed characters
+            find "$target_dir" -depth -name '*[:"*?<>|]*' | while IFS= read -r entry; do
+              dir=$(dirname "$entry")
+              base=$(basename "$entry")
+              sanitized=$(printf '%s' "$base" | tr '":*?<>|\r\n' '_')
+              echo "Renaming $entry to $dir/$sanitized"
+              mv "$entry" "$dir/$sanitized"
+            done
+          fi
+
       - name: Upload artifact
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:

@@ -44,6 +44,10 @@ on:
         description: Force rebuild
         type: boolean
         default: false
+      push-cache:
+        description: 'Push built packages to Cachix (x86_64-linux only)'
+        type: boolean
+        default: true
 
 permissions:
   contents: read
@@ -105,6 +109,20 @@ jobs:
     runs-on: ${{ matrix.target.runner }}
     # timeout-minutes: 180 # Any limitations might not fit for this repository. So temporary disabling
     steps:
+      - name: Checkout this repository
+        if: ${{ inputs.push-cache && matrix.target.name == 'x86_64-linux' }}
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: '.repo-to-get-flake-lock'
+          persist-credentials: false
+
+      - name: Move this repository to a temporary directory to avoid overlap with nixpkgs
+        if: ${{ inputs.push-cache && matrix.target.name == 'x86_64-linux' }}
+        run: |
+          target_path="${RUNNER_TEMP}/${GITHUB_REPOSITORY}"
+          mkdir -p "$(dirname "$target_path")"
+          mv .repo-to-get-flake-lock "$target_path"
+
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: '${{ inputs.repository }}'
@@ -113,6 +131,9 @@ jobs:
 
       - uses: NixOS/nix-installer-action@62c1943b776c509394b550f3f983adc14e9212d6 # v1.0.0
         with:
+          # Do not configure extra-substituters with Cachix here.
+          # Omitting custom substituters ensures builds do not accidentally
+          # substitute from personal caches instead of official sources.
           extra-conf: |
             sandbox = ${{ matrix.target.sandbox }}
 
@@ -138,6 +159,60 @@ jobs:
           else
             nix-build --attr "pkgs.$PACKAGE_NAME"
           fi
+
+      - name: Push and pin packages to Cachix
+        if: ${{ inputs.push-cache && matrix.target.name == 'x86_64-linux' }}
+        env:
+          CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
+          PACKAGE_NAME: ${{ matrix.pname }}
+          REF: ${{ inputs.ref }}
+        run: | # shell
+          #
+          if [ -z "$CACHIX_AUTH_TOKEN" ]; then
+            echo "CACHIX_AUTH_TOKEN is not set; skipping Cachix push"
+            exit 0
+          fi
+
+          entries=()
+          store_paths=()
+          for item in ./result*; do
+            [ -e "$item" ] || continue
+            target="$(readlink -f "$item")"
+            [ -e "$target" ] || continue
+            name="$(basename "$item")"
+            entries+=("{ name = \"$name\"; path = builtins.storePath \"$target\"; }")
+            store_paths+=("$target")
+          done
+
+          if [ ${#store_paths[@]} -eq 0 ]; then
+            echo "No built packages found; skipping Cachix push"
+            exit 0
+          fi
+
+          unique_store_paths=()
+          while IFS= read -r p; do
+            [ -n "$p" ] && unique_store_paths+=("$p")
+          done < <(printf '%s\n' "${store_paths[@]}" | sort -u)
+
+          # Check size limit: skip if total NAR size exceeds 2GiB (2 * 1024 * 1024 * 1024 bytes)
+          max_bytes=$((2 * 1024 * 1024 * 1024))
+          total_bytes=$(nix path-info --size "${unique_store_paths[@]}" | awk '{sum += $2} END {print sum}')
+
+          if [ -n "$total_bytes" ] && [ "$total_bytes" -gt "$max_bytes" ]; then
+            echo "::warning::Skipping Cachix push: total package size (${total_bytes} bytes) exceeds 2GiB limit"
+            exit 0
+          fi
+
+          nix profile add --inputs-from "${RUNNER_TEMP}/${GITHUB_REPOSITORY}" nixpkgs#cachix
+
+          sanitized_ref=$(printf '%s' "$REF" | tr '/\\:*?"<>|\r\n ' '-')
+          pin_name="build-${PACKAGE_NAME}-${sanitized_ref}"
+
+          nix_expr="let pkgs = import ./. {}; in pkgs.linkFarm \"${pin_name}\" [ $(printf '%s ' "${entries[@]}") ]"
+          link_farm_path=$(nix build --impure --no-link --print-out-paths --expr "$nix_expr")
+
+          cachix push kachick "$link_farm_path" "${unique_store_paths[@]}"
+          cachix pin kachick "$pin_name" "$link_farm_path" --keep-days 21
 
       - name: Sanitize artifact name
         id: artifact

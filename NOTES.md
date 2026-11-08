@@ -43,3 +43,7 @@
   - Pushes run only on `x86_64-linux` runners and can be disabled with the `push-cache` workflow input.
 - **Excluding downstream rebuilds**:
   - Only root review targets are uploaded and pinned to Cachix. Downstream packages rebuilt as side-effects are filtered out by inspecting Nix package requisites.
+- **Omission of custom substituters in build and review workflows**:
+  - `extra-substituters` does not include Cachix in `nixpkgs-review.yml` and `build.yml`.
+  - If Cachix were added as a substituter, Nix would download prebuilt binaries from cache instead of building from source, skipping compiler and test logs needed for review.
+  - Internal tools (such as `resume`) that need binary caching run in separate workflows (`report.yml`), where `extra-substituters` remains enabled.

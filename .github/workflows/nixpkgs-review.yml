@@ -393,6 +393,9 @@ jobs:
   report:
     name: report
     needs: [review]
+    # Run even when GitHub cancels a review job, such as when no macOS runner is acquired.
+    # Avoid always() to skip reports for runs cancelled by users or by concurrency.
+    if: ${{ !cancelled() }}
     uses: $/.github/workflows/report.yml
     with:
       run_id: '${{ github.run_id }}'

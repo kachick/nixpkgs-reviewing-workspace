@@ -201,6 +201,13 @@ func main() {
 	}
 	finalReport = appendFooter(finalReport, runURL, reviewVersion)
 
+	// Only warn on errors because the job list is a hint. Failing here would drop the reports already collected.
+	incompleteJobs, err := fetchIncompleteJobs(runID)
+	if err != nil {
+		log.Printf("Warning: failed to list incomplete jobs: %v", err)
+	}
+	finalReport = appendIncompleteJobs(finalReport, incompleteJobs)
+
 	checker := &BetterleaksChecker{}
 	if err := checker.Check(context.Background(), finalReport); err != nil {
 		log.Fatalf("Secret leak check failed for combined report: %v", err)
